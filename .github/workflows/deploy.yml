@@ -11,6 +11,10 @@ on:
 
 env:
   GHCR_PREFIX: ghcr.io/adkcodexd
+  ACR_REG: ${{ secrets.ALIYUN_ACR_REGISTRY }}
+  ACR_NS: ${{ secrets.ALIYUN_ACR_NAMESPACE }}
+  ACR_USER: ${{ secrets.ALIYUN_ACR_USERNAME }}
+  ACR_PASS: ${{ secrets.ALIYUN_ACR_PASSWORD }}
 
 jobs:
   build-and-deploy:
@@ -57,12 +61,7 @@ jobs:
           tags: ${{ env.GHCR_PREFIX }}/mmgc-admin:latest
 
       - name: Push to Aliyun ACR (personal)
-        if: ${{ secrets.ALIYUN_ACR_USERNAME != '' }}
-        env:
-          ACR_REG: ${{ secrets.ALIYUN_ACR_REGISTRY }}
-          ACR_NS: ${{ secrets.ALIYUN_ACR_NAMESPACE }}
-          ACR_USER: ${{ secrets.ALIYUN_ACR_USERNAME }}
-          ACR_PASS: ${{ secrets.ALIYUN_ACR_PASSWORD }}
+        if: env.ACR_USER != ''
         run: |
           echo "$ACR_PASS" | docker login "$ACR_REG" -u "$ACR_USER" --password-stdin
           for img in mmgc-backend mmgc-frontend mmgc-admin; do
