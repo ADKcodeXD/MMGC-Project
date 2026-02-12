@@ -1,9 +1,6 @@
 services:
-  # Backend (Koa + TypeScript, managed by PM2)
   backend:
-    build:
-      context: .
-      dockerfile: apps/backend/Dockerfile
+    image: ghcr.io/${GITHUB_OWNER}/mmgc-backend:latest
     restart: unless-stopped
     ports:
       - "8055:8055"
@@ -16,11 +13,8 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  # Frontend (Nuxt 3 SSR)
   frontend:
-    build:
-      context: .
-      dockerfile: apps/frontend/Dockerfile
+    image: ghcr.io/${GITHUB_OWNER}/mmgc-frontend:latest
     restart: unless-stopped
     depends_on:
       - backend
@@ -33,11 +27,8 @@ services:
     networks:
       - mmgc-net
 
-  # Admin Panel (Vite SPA, served by nginx)
   admin:
-    build:
-      context: .
-      dockerfile: apps/MMGCBACK/Dockerfile
+    image: ghcr.io/${GITHUB_OWNER}/mmgc-admin:latest
     restart: unless-stopped
     ports:
       - "8080:80"
