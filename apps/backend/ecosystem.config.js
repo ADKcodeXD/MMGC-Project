@@ -1,11 +1,10 @@
 module.exports = {
 	apps: {
 		name: 'MMGC-backend-server2', // 项目名
-		script: 'ts-node', // 执行文件
+		script: 'src/index.ts', // 入口文件
 		cwd: '.', // 根目录
-		node_args: '-r ts-node/register -r tsconfig-paths/register src/index.ts',
-		interpreter: '', // 指定的脚本解释器
-		interpreter_args: '', // 传递给解释器的参数
+		interpreter: 'node', // 用 node 执行
+		interpreter_args: '-r ts-node/register -r tsconfig-paths/register', // 加载 ts-node
 		watch: false, // 是否监听文件变动然后重启
 		ignore_watch: ['node_modules', 'logs'],
 		instance: 1,
