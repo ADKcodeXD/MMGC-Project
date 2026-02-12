@@ -24,4 +24,4 @@ RUN mkdir -p env
 
 EXPOSE 3000
 
-CMD ["node", ".output/server/index.mjs"]
+CMD ["sh", "-c", "set -a && . ./env/.env.production && set +a && node .output/server/index.mjs"]

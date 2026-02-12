@@ -8,5 +8,3 @@ services:
   frontend:
     volumes:
       - /www/wwwroot/env/frontend.env.production:/app/env/.env.production:ro
-    env_file:
-      - /www/wwwroot/env/frontend.env.production

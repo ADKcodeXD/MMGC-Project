@@ -28,8 +28,6 @@ services:
       - "3000:3000"
     volumes:
       - ./env/frontend.env.production:/app/env/.env.production:ro
-    env_file:
-      - ./env/frontend.env.production
     environment:
       NUXT_PUBLIC_API_LOCAL: http://backend:8055
     networks:
