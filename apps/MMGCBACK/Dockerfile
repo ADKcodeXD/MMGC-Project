@@ -29,7 +29,8 @@ COPY apps/MMGCBACK/ apps/MMGCBACK/
 
 WORKDIR /app/apps/MMGCBACK
 
-RUN npx cross-env NODE_ENV=production npx vite build
+# Use the existing build script (includes postBuild script, imagemin, etc.)
+RUN pnpm run build
 
 # Serve with nginx
 FROM nginx:alpine
