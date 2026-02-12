@@ -1,0 +1,21 @@
+{
+  "name": "mmgc-monorepo",
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "start": "turbo start"
+  },
+  "devDependencies": {
+    "turbo": "latest"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "webpack"
+      ]
+    }
+  },
+  "packageManager": "pnpm@9.15.4"
+}

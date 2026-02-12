@@ -1,0 +1,32 @@
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16' # 或你项目所需的 Node.js 版本
+
+      - name: Install Dependencies
+        run: npm install -f
+
+      - name: Build
+        run: npm run build # 或你的构建命令
+
+      - name: Deploy to Server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.REMOTE_PRIVATE_KEY }}
+          source: 'dist/*'
+          target: '/www/wwwroot/MMGC/backstage'
