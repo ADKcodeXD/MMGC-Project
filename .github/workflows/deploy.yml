@@ -19,7 +19,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             if [ ! -d "${{ secrets.PROJECT_PATH }}" ]; then
-              git clone git@github.com:${{ github.repository }}.git ${{ secrets.PROJECT_PATH }}
+              git clone https://github.com/${{ github.repository }}.git ${{ secrets.PROJECT_PATH }}
             fi
             cd ${{ secrets.PROJECT_PATH }}
             git pull origin master
