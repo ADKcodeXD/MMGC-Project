@@ -1,5 +1,5 @@
 # Build stage
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ RUN npx nuxi build && \
     mv .output/server/node_modules/@sxzz/popperjs-es .output/server/node_modules/@popperjs/core
 
 # Run stage
-FROM node:18-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
