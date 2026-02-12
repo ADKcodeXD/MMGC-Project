@@ -32,7 +32,7 @@ jobs:
           file: apps/backend/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ toLower(github.repository_owner) }}/mmgc-backend:latest
+            ghcr.io/adkcodexd/mmgc-backend:latest
 
       - name: Build & push frontend image
         uses: docker/build-push-action@v6
@@ -41,7 +41,7 @@ jobs:
           file: apps/frontend/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ toLower(github.repository_owner) }}/mmgc-frontend:latest
+            ghcr.io/adkcodexd/mmgc-frontend:latest
 
       - name: Build & push admin image
         uses: docker/build-push-action@v6
@@ -50,7 +50,7 @@ jobs:
           file: apps/MMGCBACK/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ toLower(github.repository_owner) }}/mmgc-admin:latest
+            ghcr.io/adkcodexd/mmgc-admin:latest
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
