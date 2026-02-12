@@ -1,30 +1,27 @@
 # 镜像前缀：默认 ghcr.io/adkcodexd；用阿里云 ACR 时在 .env 写 IMAGE_REGISTRY=crpi-xxx.personal.cr.aliyuncs.com/mmgc
 services:
+  # 使用 host 网络，使 127.0.0.1 指向宿主机，可直接连本机 MongoDB/Redis
   backend:
     image: ${IMAGE_REGISTRY:-ghcr.io/adkcodexd}/mmgc-backend:latest
     restart: unless-stopped
-    ports:
-      - "8055:8055"
+    network_mode: host
     volumes:
       - ./env/backend.env.production:/app/apps/backend/.env.production:ro
     environment:
       NODE_ENV: prod
-    networks:
-      - mmgc-net
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
 
   frontend:
     image: ${IMAGE_REGISTRY:-ghcr.io/adkcodexd}/mmgc-frontend:latest
     restart: unless-stopped
-    depends_on:
-      - backend
     ports:
       - "3000:3000"
     volumes:
       - ./env/frontend.env.production:/app/env/.env.production:ro
     environment:
-      NUXT_PUBLIC_API_LOCAL: http://backend:8055
+      # 后端在宿主机 8055，前端容器通过 host.docker.internal 访问
+      NUXT_PUBLIC_API_LOCAL: http://host.docker.internal:8055
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - mmgc-net
 

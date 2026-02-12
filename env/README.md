@@ -15,3 +15,8 @@ IMAGE_REGISTRY=crpi-azw9tnt1yp2keikm.cn-shenzhen.personal.cr.aliyuncs.com/mmgc
 
 - `backend.env.production`、`frontend.env.production` 见同目录下 `*.example` 模板。
 - 生产服务器若使用固定路径，见 `docker-compose.production.yml` 中的挂载路径（如 `/www/wwwroot/env/`）。
+
+**Docker 部署时务必：**
+- 后端使用 **host 网络**，在服务器后端 env 里写 `MONGO_PATH=mongodb://127.0.0.1:27017`、`REDIS_HOST=127.0.0.1`（直连宿主机）。
+- 后端 env 里 `MMGC_PREFIX=/mmgcApi` 且**等号两边不要有空格**，否则接口 404。
+- 前端 env 里 `NUXT_PUBLIC_API_LOCAL=http://host.docker.internal:8055`（后端在宿主机 8055，前端容器通过该地址访问）。
