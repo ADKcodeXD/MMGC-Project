@@ -1,0 +1,27 @@
+node_modules
+.git
+.gitignore
+.turbo
+*.md
+
+# Build outputs
+apps/frontend/.output
+apps/frontend/.nuxt
+apps/backend/dist
+apps/MMGCBACK/dist
+
+# Logs
+logs
+*.log
+
+# IDE
+.vscode
+.idea
+.cursor
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env files (mounted at runtime, not baked into image)
+env/

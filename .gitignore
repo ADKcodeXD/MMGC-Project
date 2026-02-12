@@ -1,2 +1,6 @@
 node_modules
 .turbo
+
+# Production env files (only .example files should be committed)
+env/*.production
+!env/*.production.example

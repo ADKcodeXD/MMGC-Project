@@ -1,0 +1,12 @@
+# Production override: reads env from /www/wwwroot/env/
+# Usage: docker compose -f docker-compose.yml -f docker-compose.production.yml up -d --build
+services:
+  backend:
+    volumes:
+      - /www/wwwroot/env/backend.env.production:/app/.env.production:ro
+
+  frontend:
+    volumes:
+      - /www/wwwroot/env/frontend.env.production:/app/env/.env.production:ro
+    env_file:
+      - /www/wwwroot/env/frontend.env.production

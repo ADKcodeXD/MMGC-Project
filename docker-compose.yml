@@ -1,0 +1,51 @@
+services:
+  # Backend (Koa + TypeScript, managed by PM2)
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8055:8055"
+    volumes:
+      - ./env/backend.env.production:/app/.env.production:ro
+    environment:
+      NODE_ENV: prod
+    networks:
+      - mmgc-net
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Frontend (Nuxt 3 SSR)
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./env/frontend.env.production:/app/env/.env.production:ro
+    env_file:
+      - ./env/frontend.env.production
+    environment:
+      NUXT_PUBLIC_API_LOCAL: http://backend:8055
+    networks:
+      - mmgc-net
+
+  # Admin Panel (Vite SPA, served by nginx)
+  admin:
+    build:
+      context: ./apps/MMGCBACK
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    networks:
+      - mmgc-net
+
+networks:
+  mmgc-net:
+    driver: bridge
