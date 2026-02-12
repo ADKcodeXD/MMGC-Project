@@ -61,10 +61,14 @@ jobs:
           tags: ${{ env.GHCR_PREFIX }}/mmgc-admin:latest
 
       - name: Push to Aliyun ACR (personal)
-        if: env.ACR_USER != ''
         run: |
+          if [ -z "$ACR_USER" ] || [ -z "$ACR_REG" ]; then
+            echo "Skip: ALIYUN_ACR_* Secrets not set."
+            exit 0
+          fi
           echo "$ACR_PASS" | docker login "$ACR_REG" -u "$ACR_USER" --password-stdin
           for img in mmgc-backend mmgc-frontend mmgc-admin; do
+            docker pull ${{ env.GHCR_PREFIX }}/$img:latest
             docker tag ${{ env.GHCR_PREFIX }}/$img:latest "$ACR_REG/$ACR_NS/$img:latest"
             docker push "$ACR_REG/$ACR_NS/$img:latest"
           done
