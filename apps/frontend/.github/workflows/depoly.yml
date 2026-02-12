@@ -1,0 +1,72 @@
+name: Conditional Deploy to Server
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18' # 使用你项目的Node.js版本
+      
+      - name: Create .npmrc
+        run: echo "shamefully-hoist=true" > .npmrc
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Project
+        run: npm run build
+
+      - name: List output directory contents
+        run: ls -R .output/
+      
+      - name: List output directory contents
+        run: ls -R .nuxt/
+
+      - name: Copy Build Artifacts to Server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: '.output/'
+          target: '/www/wwwroot/MMGC/MMGC-frontend'
+
+      - name: Copy .nuxt
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: '.nuxt/'
+          target: '/www/wwwroot/MMGC/MMGC-frontend'
+
+      - name: Install Dependencies on Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /www/wwwroot/MMGC/MMGC-frontend
+            git pull
+
+      - name: Start Application on Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /www/wwwroot/MMGC/MMGC-frontend
+            pm2 delete MMGCApp || true
+            npm run start

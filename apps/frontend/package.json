@@ -1,0 +1,79 @@
+{
+  "name": "mirai-offcial-website",
+  "packageManager": "pnpm@9.15.4",
+  "version": "0.1.0",
+  "description": "Mirai Mad Team Offcial Website by ADK. Used Nuxt3 to supprot SEO",
+  "author": "ADK & Mirai Mad Team",
+  "license": "MIT",
+  "private": false,
+  "bugs": {
+    "url": "https://github.com/ADKcodeXD/MMGC-frontend/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ADKcodeXD/MMGC-frontend.git"
+  },
+  "scripts": {
+    "dev": "nuxi dev --dotenv env/.env.development --host",
+    "dev:prod": "nuxi dev --dotenv env/.env.production",
+    "build": "nuxi build && mkdir .output/server/node_modules/@popperjs && mv .output/server/node_modules/@sxzz/popperjs-es .output/server/node_modules/@popperjs/core",
+    "preview": "nuxi preview",
+    "build:start:node": "nuxi build && node .output/server/index.mjs --dotenv env/.env.production",
+    "start:node": "node .output/server/index.mjs --dotenv env/.env.production",
+    "start": "pm2 start ecosystem.config.js",
+    "start:build": "nuxi build && pm2 start ecosystem.config.js",
+    "generate": "nuxi generate"
+  },
+  "dependencies": {
+    "@element-plus/nuxt": "1.0.7",
+    "@videojs-player/vue": "^1.0.0",
+    "cross-env": "^7.0.3",
+    "element-plus": "2.4.4",
+    "global": "^4.4.0",
+    "h3": "^1.6.0",
+    "pinia": "^2.0.22",
+    "pinia-plugin-persist": "^1.0.0",
+    "plyr": "^3.7.8",
+    "video.js": "^7.21.1",
+    "vue": "^3.5.0",
+    "vue-i18n": "9.10.1",
+    "vue-router": "^4.1.6",
+    "vue3-emoji": "2.1.8"
+  },
+  "devDependencies": {
+    "@nuxt/vite-builder": "^3.0.0",
+    "@nuxtjs/i18n": "npm:@nuxtjs/i18n-edge@8.5.5-28788330.10c02b3",
+    "@pinia/nuxt": "^0.4.2",
+    "@types/node": "^18.15.5",
+    "@types/video.js": "^7.3.51",
+    "@typescript-eslint/eslint-plugin": "^5.39.0",
+    "@typescript-eslint/parser": "^5.39.0",
+    "@unocss/nuxt": "^0.45.21",
+    "@varlet/nuxt": "^0.0.8",
+    "@varlet/ui": "^3.1.2",
+    "@vueuse/nuxt": "^9.2.0",
+    "dayjs-nuxt": "^2.1.9",
+    "eslint": "^8.25.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-vue": "^9.6.0",
+    "nuxt": "3.14.0",
+    "nuxt-icon": "^0.4.1",
+    "nuxt-lodash": "^2.4.1",
+    "prettier": "^2.7.1",
+    "sass": "^1.54.9",
+    "typescript": "^4.9.5",
+    "unplugin-element-plus": "0.4.1",
+    "vite": "^3.1.1",
+    "vite-plugin-eslint": "^1.8.1",
+    "vue-eslint-parser": "^8.0.0",
+    "vue-tsc": "^1.8.22"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "webpack"
+      ]
+    }
+  }
+}

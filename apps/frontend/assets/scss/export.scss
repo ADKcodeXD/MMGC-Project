@@ -1,0 +1,84 @@
+@use './variable/color' as *;
+@use './variable/fontsize' as *;
+@use './func/func' as *;
+@use './transition';
+
+.router-link-exact-active {
+  color: $themeColor;
+}
+.router-link-active {
+  color: $themeColor;
+}
+
+.title {
+  color: $themeColor;
+  font-weight: 600;
+  font-size: $bigFontSize;
+  margin: 1rem 0;
+  @include showLine(1);
+}
+
+.title-click {
+  color: $themeNotActiveColor;
+  font-weight: 600;
+  font-size: $bigFontSize;
+  margin: 1rem 0;
+  @include showLine(1);
+  transition: 0.4s ease all;
+  cursor: pointer;
+  &:hover {
+    color: $themeColor;
+  }
+}
+
+.sub-title {
+  color: $tipColor;
+  font-size: $smallFontSize;
+  @include showLine(1);
+}
+
+.sub-title-no-line {
+  color: $tipColor;
+  font-size: $smallFontSize;
+}
+
+.tag {
+  &-primary {
+    @include tagfunc();
+    color: $whiteColor;
+    background-color: #ff5454;
+    @include showLine(1);
+  }
+  &-day {
+    @include tagfunc();
+    background-color: $hintColor;
+    color: $whiteColor;
+    @include showLine(1);
+  }
+}
+
+.el-dropdown {
+  cursor: pointer;
+}
+
+.el-message-box {
+  border-radius: 28px !important;
+  border: 2px solid $themeColor !important;
+}
+
+:focus-visible {
+  outline: none;
+}
+
+.el-popper {
+  padding: 5px;
+  max-width: 400px;
+}
+
+:deep(.el-avatar) {
+  cursor: pointer;
+}
+
+.el-button {
+  border-radius: 8px;
+}

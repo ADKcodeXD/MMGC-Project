@@ -1,0 +1,27 @@
+@use '../variable/color' as *;
+@use '../variable/fontsize' as *;
+
+@mixin title($font-size: 32px, $font-weight: 600) {
+  font-size: $font-size;
+  font-weight: $font-weight;
+  color: $themeColor;
+}
+
+@mixin showLine($linecount: 1) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: $linecount;
+  -webkit-box-orient: vertical;
+}
+
+@mixin tagfunc() {
+  display: inline-flex;
+  align-items: center;
+  text-align: center;
+  padding: 2px 16px;
+  font-size: $normalFontSize;
+  border-radius: 14px;
+  margin-right: 5px;
+  font-weight: bold;
+}

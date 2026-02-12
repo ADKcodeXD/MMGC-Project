@@ -1,0 +1,9 @@
+node_modules
+*.log
+dist
+.output
+.nuxt
+.vercel
+.vscode
+*.zip
+next-app
