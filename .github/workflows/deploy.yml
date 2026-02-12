@@ -1,9 +1,16 @@
-name: Build & Deploy with Docker Images
+# 构建镜像推送到 GHCR，并同步到阿里云个人版 ACR（服务器从 ACR 拉取更快）
+# 需在 Settings -> Secrets 配置：
+#   SSH_HOST, SSH_USERNAME, SSH_PASSWORD 或 SSH_KEY, SSH_PORT, PROJECT_PATH
+#   ALIYUN_ACR_REGISTRY、ALIYUN_ACR_NAMESPACE、ALIYUN_ACR_USERNAME、ALIYUN_ACR_PASSWORD（用 ACR 时必填）
+name: Build & Deploy
 
 on:
   push:
     branches:
       - master
+
+env:
+  GHCR_PREFIX: ghcr.io/adkcodexd
 
 jobs:
   build-and-deploy:
@@ -25,32 +32,43 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & push backend image
+      - name: Build & push backend
         uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/backend/Dockerfile
           push: true
-          tags: |
-            ghcr.io/adkcodexd/mmgc-backend:latest
+          tags: ${{ env.GHCR_PREFIX }}/mmgc-backend:latest
 
-      - name: Build & push frontend image
+      - name: Build & push frontend
         uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/frontend/Dockerfile
           push: true
-          tags: |
-            ghcr.io/adkcodexd/mmgc-frontend:latest
+          tags: ${{ env.GHCR_PREFIX }}/mmgc-frontend:latest
 
-      - name: Build & push admin image
+      - name: Build & push admin
         uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/MMGCBACK/Dockerfile
           push: true
-          tags: |
-            ghcr.io/adkcodexd/mmgc-admin:latest
+          tags: ${{ env.GHCR_PREFIX }}/mmgc-admin:latest
+
+      - name: Push to Aliyun ACR (personal)
+        if: ${{ secrets.ALIYUN_ACR_USERNAME != '' }}
+        env:
+          ACR_REG: ${{ secrets.ALIYUN_ACR_REGISTRY }}
+          ACR_NS: ${{ secrets.ALIYUN_ACR_NAMESPACE }}
+          ACR_USER: ${{ secrets.ALIYUN_ACR_USERNAME }}
+          ACR_PASS: ${{ secrets.ALIYUN_ACR_PASSWORD }}
+        run: |
+          echo "$ACR_PASS" | docker login "$ACR_REG" -u "$ACR_USER" --password-stdin
+          for img in mmgc-backend mmgc-frontend mmgc-admin; do
+            docker tag ${{ env.GHCR_PREFIX }}/$img:latest "$ACR_REG/$ACR_NS/$img:latest"
+            docker push "$ACR_REG/$ACR_NS/$img:latest"
+          done
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
@@ -60,6 +78,7 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
+          command_timeout: 30m
           script: |
             if [ ! -d "${{ secrets.PROJECT_PATH }}" ]; then
               git clone https://github.com/${{ github.repository }}.git ${{ secrets.PROJECT_PATH }}
