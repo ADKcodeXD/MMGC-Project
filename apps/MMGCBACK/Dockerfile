@@ -1,5 +1,18 @@
 FROM node:22-alpine AS builder
 
+# Native build deps for gifsicle / optipng-bin etc.
+RUN apk add --no-cache \
+    autoconf \
+    automake \
+    libtool \
+    make \
+    gcc \
+    g++ \
+    zlib-dev \
+    libpng-dev \
+    nasm \
+    python3
+
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 
 WORKDIR /app
