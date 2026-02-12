@@ -1,13 +1,21 @@
 FROM node:22-alpine
 
-WORKDIR /app
-
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 RUN npm install -g pm2
 
-COPY package*.json ./
-RUN npm install
+WORKDIR /app
 
-COPY . .
+# Copy workspace config
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/backend/package.json apps/backend/
+
+# Install dependencies
+RUN pnpm install --filter mmgc_backend --frozen-lockfile
+
+# Copy backend source
+COPY apps/backend/ apps/backend/
+
+WORKDIR /app/apps/backend
 
 ENV NODE_ENV=prod
 

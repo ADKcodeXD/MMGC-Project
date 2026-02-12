@@ -3,7 +3,7 @@
 services:
   backend:
     volumes:
-      - /www/wwwroot/env/backend.env.production:/app/.env.production:ro
+      - /www/wwwroot/env/backend.env.production:/app/apps/backend/.env.production:ro
 
   frontend:
     volumes:

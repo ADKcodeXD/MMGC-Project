@@ -130,7 +130,7 @@ export default class MemberController {
 
   @PutMapping('/updateMember', [Validtor('body', memberUpdateParamsValidate)])
   @Auth([ROLE.ADMIN, ROLE.SUBADMIN], '/updateMember')
-  async updateUser(@Body() memberParams: MemberVo, @User() userInfo: MemberVo) {
+  async updateUser(@Body() memberParams: MemberVo, @User() userInfo: MemberVo): Promise<any> {
     const { role } = memberParams
     if (role === ROLE.ADMIN && userInfo.role !== ROLE.ADMIN) {
       return Result.noAuth()
@@ -144,7 +144,7 @@ export default class MemberController {
   }
 
   @PostMapping('/updateUserInfoByToken', [Validtor('body', memberUpdateParamsValidate)])
-  async updateUserInfoByToken(@Body() memberParams: MemberVo, @User() user: MemberVo) {
+  async updateUserInfoByToken(@Body() memberParams: MemberVo, @User() user: MemberVo): Promise<any> {
     if (!user || !user.memberId) return Result.noAuth()
     if (!memberParams.memberId) return Result.paramsError()
     if (user.memberId !== memberParams.memberId) {

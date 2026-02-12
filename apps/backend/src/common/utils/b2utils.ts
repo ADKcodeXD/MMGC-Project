@@ -37,7 +37,8 @@ export class B2Util {
 			bucketId: config.B2_BUCKET_ID || ''
 		})
 		const res = await this.smallFileUpload(body, key, response)
-		if (parseInt(res) === 200) {
+		// smallFileUpload 返回的是 HTTP status（number），直接比较即可
+		if (res === 200) {
 			return `${config.B2_SERVER_PATH}/${key}`
 		}
 		return null

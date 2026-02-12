@@ -121,7 +121,7 @@ export default class MemberService extends BaseService {
     return true
   }
 
-  async updateUser(memberParams: MemberVo) {
+  async updateUser(memberParams: MemberVo): Promise<any> {
     if (!memberParams.memberId) {
       return false
     }

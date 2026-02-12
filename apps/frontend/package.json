@@ -16,7 +16,7 @@
   "scripts": {
     "dev": "nuxi dev --dotenv env/.env.development --host",
     "dev:prod": "nuxi dev --dotenv env/.env.production",
-    "build": "nuxi build && mkdir .output/server/node_modules/@popperjs && mv .output/server/node_modules/@sxzz/popperjs-es .output/server/node_modules/@popperjs/core",
+    "build": "nuxi build && mkdir -p .output/server/node_modules/@popperjs && if [ -d .output/server/node_modules/@sxzz/popperjs-es ]; then mv .output/server/node_modules/@sxzz/popperjs-es .output/server/node_modules/@popperjs/core; fi",
     "preview": "nuxi preview",
     "build:start:node": "nuxi build && node .output/server/index.mjs --dotenv env/.env.production",
     "start:node": "node .output/server/index.mjs --dotenv env/.env.production",

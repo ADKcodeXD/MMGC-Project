@@ -1,25 +1,32 @@
 # Build stage
 FROM node:22-alpine AS builder
 
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm install
+# Copy workspace config
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/frontend/package.json apps/frontend/
 
-COPY . .
-RUN npx nuxi build && \
-    mkdir -p .output/server/node_modules/@popperjs && \
-    mv .output/server/node_modules/@sxzz/popperjs-es .output/server/node_modules/@popperjs/core
+# Install dependencies
+RUN pnpm install --filter mirai-offcial-website --frozen-lockfile
+
+# Copy frontend source
+COPY apps/frontend/ apps/frontend/
+
+WORKDIR /app/apps/frontend
+
+# Use the existing build script (includes popperjs compatibility fix)
+RUN pnpm run build
 
 # Run stage
 FROM node:22-alpine
 
 WORKDIR /app
 
-COPY --from=builder /app/.output /app/.output
-COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/apps/frontend/.output /app/.output
 
-# Create env directory for mounted env file
 RUN mkdir -p env
 
 EXPOSE 3000
