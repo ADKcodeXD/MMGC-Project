@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-black body">
+  <div class="bg-black body" :style="bgStyle">
     <Suspense>
       <NuxtLayout>
         <NuxtPage :activityId="activityId" />
@@ -12,8 +12,17 @@
 </template>
 
 <script setup lang="ts">
+import { useGlobalStore } from '~~/stores/global'
+
 const route = useRoute()
 const activityId = parseInt(route.params.activityId.toString())
+const globalStore = useGlobalStore()
+
+const defaultBg = new URL('@/assets/img/bg.png', import.meta.url).href
+const bgStyle = computed(() => {
+  const bgUrl = globalStore.currentActivityData?.activityBackgroundImg || defaultBg
+  return { backgroundImage: `url(${bgUrl})` }
+})
 </script>
 
 <style lang="scss" scoped>
@@ -24,7 +33,6 @@ const activityId = parseInt(route.params.activityId.toString())
     max-height: 100%;
     display: flex;
     flex-direction: column;
-    background-image: url(@/assets/img/bg.png);
     background-size: cover;
     min-width: 320px;
     overflow: hidden;

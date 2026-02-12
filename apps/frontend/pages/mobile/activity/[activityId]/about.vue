@@ -13,13 +13,35 @@
               v-html="activityData.desc[locale] || activityData.desc['cn']"
             />
           </div>
-          <div v-if="activityData.staff && activityData.staff.length" class="mt-2">
-            <p class="title">Staff</p>
-            <div class="flex flex-col">
+          <!-- 鸣谢 -->
+          <div
+            v-if="activityData.sponsorListVo && activityData.sponsorListVo.length"
+            class="mt-6 text-center"
+          >
+            <p class="title mb-2">{{ $t('thanks') }}</p>
+            <p class="text-sm opacity-80 mb-3">
+              {{ $t('sponsoredBy', { sponsor: sponsorNames }) }}
+            </p>
+            <div class="flex flex-wrap justify-center gap-4">
+              <MyCustomImage
+                v-for="sponsor in activityData.sponsorListVo"
+                :key="sponsor.sponsorId"
+                :img="sponsor.sponsorLogo"
+                class="w-28 h-16 object-contain"
+              />
+            </div>
+          </div>
+          <!-- Staff -->
+          <div
+            v-if="activityData.staff && activityData.staff.length"
+            class="mt-6 flex flex-col items-center"
+          >
+            <p class="title mb-2">Staff</p>
+            <div class="flex flex-col items-center w-full">
               <template v-for="(members, role) in groupedStaff" :key="role">
-                <div class="my-2 flex flex-col">
-                  <p class="my-2">{{ role }}:</p>
-                  <div class="flex flex-wrap gap-1">
+                <div class="my-3 flex flex-col items-center w-full">
+                  <p class="my-1 text-sm opacity-80">{{ role }}</p>
+                  <div class="flex flex-wrap gap-3 justify-center">
                     <div
                       v-for="member in members"
                       :key="member.name"
@@ -28,15 +50,15 @@
                       <a :href="member.link" target="_blank" v-if="member.link" class="block">
                         <img
                           :src="member.avatar || '/default-avatar.png'"
-                          class="w-10 h-10 rounded-full border border-gray-200"
+                          class="w-12 h-12 rounded-full border border-gray-200"
                         />
                       </a>
                       <img
                         v-else
                         :src="member.avatar || '/default-avatar.png'"
-                        class="w-10 h-10 rounded-full border border-gray-200"
+                        class="w-12 h-12 rounded-full border border-gray-200"
                       />
-                      <span class="text-xs mt-1">{{ member.name }}</span>
+                      <span class="text-xs mt-1 text-center px-2">{{ member.name }}</span>
                     </div>
                   </div>
                 </div>
@@ -74,6 +96,14 @@
 <script setup lang="ts">
 const { locale } = useCurrentLocale()
 const { activityData, isLoading } = useAboutPage()
+
+const sponsorNames = computed(() => {
+  if (!activityData.value?.sponsorListVo) return ''
+  return activityData.value.sponsorListVo
+    .map((s) => s.sponsorName?.[locale.value] || s.sponsorName?.cn || '')
+    .filter(Boolean)
+    .join('、')
+})
 
 const groupedStaff = computed(() => {
   const groups: Record<string, any[]> = {

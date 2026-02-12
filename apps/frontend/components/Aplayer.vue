@@ -20,22 +20,20 @@
       </div>
 
       <!-- 视频源切换按钮 -->
-      <div v-if="sources.length > 1" class="source-selector">
-        <div class="source-label">
-          <span class="source-icon">🌐</span>
-          {{ sourceText.label }}
-        </div>
-        <div class="source-buttons">
-          <button
-            v-for="item in sources"
-            :key="item.label"
-            :class="['source-btn', { active: item.label === currentLabel }]"
-            @click="switchSource(item.label)"
-          >
-            <span class="source-flag">{{ getLanguageFlag(item.label) }}</span>
-            <span class="source-text">{{ getLanguageText(item.label) }}</span>
-          </button>
-        </div>
+      <div
+        v-if="sources.length > 1"
+        class="source-selector"
+        :class="{ 'selector-hidden': isVideoPlaying }"
+      >
+        <span class="source-label">{{ sourceText.label }}</span>
+        <button
+          v-for="item in sources"
+          :key="item.label"
+          :class="['source-btn', { active: item.label === currentLabel }]"
+          @click="switchSource(item.label)"
+        >
+          {{ getLanguageText(item.label) }}
+        </button>
       </div>
     </div>
   </ClientOnly>
@@ -45,7 +43,6 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { calcZip } from '~~/utils'
-import * as _ from 'lodash-es'
 
 interface VideoSource {
   src: string
@@ -65,6 +62,7 @@ const playerContainer = ref<HTMLElement>()
 const videoElement = ref<HTMLVideoElement>()
 let player: any = null
 const currentLabel = ref(locale.value)
+const isVideoPlaying = ref(false)
 const isMobile = ref(false)
 const showOrientationTip = ref(false)
 
@@ -139,13 +137,13 @@ const coverzip = computed(() => {
 })
 
 const sources = computed<VideoSource[]>(() => {
-  if (_.isArray(props.videoUrl)) {
+  if (isArray(props.videoUrl)) {
     return props.videoUrl.map((item: any) => ({
       src: item.url,
       type: 'video/mp4',
       label: item.label
     }))
-  } else if (_.isObject(props.videoUrl)) {
+  } else if (isObject(props.videoUrl)) {
     return Object.keys(props.videoUrl).map((key: string) => ({
       src: props.videoUrl[key],
       type: 'video/mp4',
@@ -170,21 +168,6 @@ const currentSrc = computed(() => {
 // 检测移动设备
 function detectMobile(): boolean {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-}
-
-// 获取语言标志
-function getLanguageFlag(label: string): string {
-  const flags: Record<string, string> = {
-    zh: '🇨🇳',
-    'zh-CN': '🇨🇳',
-    'zh-TW': '🇹🇼',
-    en: '🇺🇸',
-    'en-US': '🇺🇸',
-    ja: '🇯🇵',
-    'ja-JP': '🇯🇵',
-    default: '🌐'
-  }
-  return flags[label] || '🌐'
 }
 
 // 获取语言文本
@@ -353,14 +336,17 @@ onMounted(async () => {
     })
 
     player.on('play', () => {
+      isVideoPlaying.value = true
       emit('onPlay')
     })
 
     player.on('pause', () => {
+      isVideoPlaying.value = false
       emit('onPause')
     })
 
     player.on('ended', () => {
+      isVideoPlaying.value = false
       emit('onPause')
     })
 
@@ -393,6 +379,10 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  // Hide player container before destroy to prevent poster flash during transition
+  if (playerContainer.value) {
+    playerContainer.value.style.opacity = '0'
+  }
   if (player) {
     player.destroy()
     player = null
@@ -701,116 +691,59 @@ defineExpose({
 .source-selector {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
+  gap: 8px;
+  padding: 2px 4px;
+  max-height: 40px;
+  opacity: 1;
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.4s ease;
+
+  &.selector-hidden {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+  }
 
   .source-label {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #333;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.45);
     white-space: nowrap;
-  }
-
-  .source-icon {
-    font-size: 16px;
-    opacity: 0.7;
-  }
-
-  .source-buttons {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+    flex-shrink: 0;
   }
 
   .source-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    background: #fff;
-    border-radius: 6px;
-    font-size: 13px;
+    padding: 4px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    font-size: 12px;
     font-weight: 500;
-    color: #666;
+    color: rgba(255, 255, 255, 0.6);
     cursor: pointer;
-    transition: all 0.2s ease;
-    min-width: 80px;
-    justify-content: center;
-
-    .source-text {
-      white-space: nowrap;
-    }
+    transition: all 0.25s ease;
+    white-space: nowrap;
 
     &:hover {
-      border-color: #007bff;
-      color: #007bff;
-      background: rgba(0, 123, 255, 0.05);
-      transform: translateY(-1px);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.4);
+      background: rgba(255, 255, 255, 0.1);
     }
 
     &.active {
-      background: #007bff;
-      border-color: #007bff;
-      color: #fff;
-      box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+      background: var(--themeColor, #fcc55f);
+      border-color: var(--themeColor, #fcc55f);
+      color: #000;
+      font-weight: 600;
     }
 
     &:focus {
       outline: none;
-      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.3);
-    }
-  }
-}
-
-// 响应式设计
-@media (max-width: 768px) {
-  .source-selector {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-
-    .source-buttons {
-      width: 100%;
-      justify-content: flex-start;
-    }
-
-    .source-btn {
-      flex: 1;
-      min-width: 70px;
     }
   }
 }
 
 // 暗色主题支持
 @media (prefers-color-scheme: dark) {
-  .source-selector {
-    background: rgba(30, 30, 30, 0.95);
-
-    .source-label {
-      color: #e0e0e0;
-    }
-
-    .source-btn {
-      background: #2a2a2a;
-      border-color: #444;
-      color: #ccc;
-
-      &:hover {
-        background: rgba(0, 123, 255, 0.1);
-        border-color: #007bff;
-        color: #007bff;
-      }
-    }
-  }
-
   .orientation-tip .orientation-content {
     background: #2a2a2a;
     color: #e0e0e0;

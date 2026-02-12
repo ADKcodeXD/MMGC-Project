@@ -150,6 +150,8 @@
   "statisticsTitle": "MMGC历届作者参赛记录",
   "viewOtherActivities": "查看其他活动",
   "noData": "暂无数据",
+  "sponsoredBy": "本次活动由 {sponsor} 赞助",
+  "thanks": "鸣谢",
   "staffRole": {
     "organizer": "主办",
     "judge": "评委",

@@ -5,23 +5,35 @@
         <MyCustomImage :img="activityData?.activityLogo" />
       </section>
       <nav class="MMGC-nav">
-        <div class="nav-item" :class="{ 'nav-active': currentRoute(`/activity/${activityId}/about`) }">
+        <div
+          class="nav-item"
+          :class="{ 'nav-active': currentRoute(`/activity/${activityId}/about`) }"
+        >
           <div class="active"></div>
           <NuxtLink :to="localePath(`/activity/${activityId}/about`)"> {{ $t('desc') }} </NuxtLink>
         </div>
-        <div class="nav-item" :class="{ 'nav-active': currentRoute(`/activity/${activityId}/main`) }">
+        <div
+          class="nav-item"
+          :class="{ 'nav-active': currentRoute(`/activity/${activityId}/main`) }"
+        >
           <div class="active"></div>
           <NuxtLink :to="localePath(`/activity/${activityId}/main`)">
             {{ $t('mainStage') }}
           </NuxtLink>
         </div>
-        <div class="nav-item" :class="{ 'nav-active': currentRoute(`/activity/${activityId}/support`) }">
+        <div
+          class="nav-item"
+          :class="{ 'nav-active': currentRoute(`/activity/${activityId}/support`) }"
+        >
           <div class="active"></div>
           <NuxtLink :to="localePath(`/activity/${activityId}/support`)">
             {{ $t('organSponsor') }}
           </NuxtLink>
         </div>
-        <div class="nav-item" :class="{ 'nav-active': currentRoute(`/activity/${activityId}/history`) }">
+        <div
+          class="nav-item"
+          :class="{ 'nav-active': currentRoute(`/activity/${activityId}/history`) }"
+        >
           <div class="active"></div>
           <NuxtLink :to="localePath(`/activity/${activityId}/history`)">
             {{ $t('history') }}

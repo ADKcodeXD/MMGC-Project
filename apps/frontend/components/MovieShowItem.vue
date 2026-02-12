@@ -5,15 +5,17 @@
         v-if="movieItem.moviePlaylink"
         :video-url="movieItem.moviePlaylink"
         :cover="movieItem.movieCover"
+        @on-play="emit('onPlay')"
+        @on-pause="emit('onPause')"
       />
       <div v-else class="w-full h-full">
         <MyCustomImage :img="movieItem.movieCover"></MyCustomImage>
       </div>
     </div>
 
-    <div class="desc-pannel">
+    <div class="desc-pannel" :class="{ 'desc-collapsed': isPlaying }">
       <p class="desc-title">{{ movieItem.movieName[locale] || movieItem.movieName['cn'] }}</p>
-      <div class="flex justify-between">
+      <div class="desc-detail">
         <div class="flex items-end max-w-11/12">
           <MemberPop v-if="movieItem.author" :member-vo="movieItem.author" :size="30" />
           <p class="text-light-50 text-xl whitespace-nowrap">
@@ -64,6 +66,50 @@
           <p>{{ $t('polls') }}</p>
         </template>
       </div>
+      <el-popover
+        v-if="movieItem.movieDownloadLink"
+        placement="left"
+        :width="200"
+        trigger="click"
+        popper-class="popover"
+      >
+        <template #reference>
+          <div class="flex items-center operitem flex-col">
+            <Icon name="ant-design:download-outlined" class="text-xl" />
+            <p>DL</p>
+          </div>
+        </template>
+        <div class="flex flex-wrap justify-center items-center gap-3 py-1">
+          <div
+            v-if="movieItem.movieDownloadLink?.google"
+            class="text-4xl cursor-pointer"
+            @click="openLink(movieItem.movieDownloadLink.google)"
+          >
+            <Icon name="logos:google-drive" />
+          </div>
+          <div
+            v-if="movieItem.movieDownloadLink?.baidu"
+            class="text-4xl cursor-pointer"
+            @click="openLink(movieItem.movieDownloadLink.baidu)"
+          >
+            <Icon name="simple-icons:baidu" class="text-blue-600" />
+          </div>
+          <div
+            v-if="movieItem.movieDownloadLink?.onedrive"
+            class="text-4xl cursor-pointer"
+            @click="openLink(movieItem.movieDownloadLink.onedrive)"
+          >
+            <Icon name="logos:microsoft-onedrive" />
+          </div>
+          <div
+            v-if="movieItem.movieDownloadLink?.other"
+            class="text-4xl cursor-pointer"
+            @click="openLink(movieItem.movieDownloadLink.other)"
+          >
+            <Icon name="material-symbols:link-rounded" class="text-green-600" />
+          </div>
+        </div>
+      </el-popover>
     </div>
   </div>
   <el-dialog v-model="pollDialogShow" :title="$t('PollLink')" width="400" draggable>
@@ -94,10 +140,12 @@
 
 <script setup lang="ts">
 import type { MovieVo } from '~~/types/movie.type'
-defineProps<{
+const props = defineProps<{
   movieItem: MovieVo | any
   dayPollLink?: Sns | null
+  isPlaying?: boolean
 }>()
+const emit = defineEmits(['onPlay', 'onPause'])
 const pollDialogShow = ref(false)
 
 const pollByLink = (movie: MovieVo, dayPollLink?: Sns | null) => {
@@ -110,6 +158,10 @@ const pollByLink = (movie: MovieVo, dayPollLink?: Sns | null) => {
 
 const { locale } = useCurrentLocale()
 const { pollMovie, likeOrUnLike, goToMovieDetail } = useMovieOperate()
+
+const openLink = (url: string) => {
+  window.open(url, '_blank')
+}
 </script>
 
 <style lang="scss" scoped>
@@ -125,8 +177,10 @@ const { pollMovie, likeOrUnLike, goToMovieDetail } = useMovieOperate()
   box-shadow: 0 0 16px $themeColorBackShadow;
   backdrop-filter: blur(4px);
   .topPannel {
-    height: calc(100% - 6rem);
+    flex: 1;
+    min-height: 0;
     background-color: #3d1e0184;
+    transition: flex 0.4s ease;
   }
   .desc-pannel {
     height: 6rem;
@@ -136,10 +190,36 @@ const { pollMovie, likeOrUnLike, goToMovieDetail } = useMovieOperate()
     flex-direction: column;
     background-color: #3d1e0107;
     z-index: 2;
+    transition: height 0.4s ease, padding 0.4s ease;
+    overflow: hidden;
+
     .desc-title {
       font-size: $midFontSize;
       color: white;
       margin-bottom: 0.5rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .desc-detail {
+      display: flex;
+      justify-content: space-between;
+      transition: opacity 0.3s ease, max-height 0.4s ease;
+      max-height: 4rem;
+      opacity: 1;
+    }
+
+    &.desc-collapsed {
+      height: 3.5rem;
+      padding-top: 0.8rem;
+      padding-bottom: 0.5rem;
+
+      .desc-detail {
+        opacity: 0;
+        max-height: 0;
+        overflow: hidden;
+      }
     }
   }
   &:hover {

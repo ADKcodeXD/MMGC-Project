@@ -150,6 +150,8 @@
   "statisticsTitle": "MMGC Participation Record",
   "viewOtherActivities": "View Other Activities",
   "noData": "No data available",
+  "sponsoredBy": "This event is sponsored by {sponsor}",
+  "thanks": "Acknowledgements",
   "staffRole": {
     "organizer": "Organizer",
     "judge": "Judge",

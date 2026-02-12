@@ -5,15 +5,23 @@
         <Transition :name="currentAnime" mode="out-in">
           <div class="video-content" v-if="movies.length">
             <Transition :name="currentAnime" mode="out-in">
-              <div v-if="activeVideo" class="flex-1" :key="activeVideo.movieId">
+              <div v-if="activeVideo" class="flex-1 video-item-wrapper" :key="activeVideo.movieId">
+                <div
+                  class="video-glow"
+                  :class="{ 'glow-active': isPlaying }"
+                  :style="{ backgroundImage: `url(${activeVideo.movieCover})` }"
+                />
                 <MovieShowItem
                   :movie-item="activeVideo"
                   :day-poll-link="currentDayItem?.dayPollLink"
+                  :is-playing="isPlaying"
+                  @on-play="onVideoPlay"
+                  @on-pause="onVideoPause"
                 />
               </div>
               <ElEmpty v-else />
             </Transition>
-            <ElScrollbar>
+            <ElScrollbar :class="{ 'sidebar-hidden': isPlaying }">
               <div class="list-wrapper">
                 <div
                   class="movie-list-card my-2"
@@ -147,6 +155,30 @@ const {
   getVideoByDay
 } = useActivityMain()
 
+const isPlaying = ref(false)
+let pauseTimer: ReturnType<typeof setTimeout> | null = null
+
+const onVideoPlay = () => {
+  if (pauseTimer) {
+    clearTimeout(pauseTimer)
+    pauseTimer = null
+  }
+  isPlaying.value = true
+}
+
+const onVideoPause = () => {
+  if (pauseTimer) clearTimeout(pauseTimer)
+  pauseTimer = setTimeout(() => {
+    isPlaying.value = false
+  }, 400)
+}
+
+// Reset playing state when switching videos
+watch(activeVideo, () => {
+  if (pauseTimer) clearTimeout(pauseTimer)
+  isPlaying.value = false
+})
+
 // Get activity list for dropdown
 const { activityList: activityListData } = useActivityList()
 const activityList = ref<any[]>([])
@@ -216,6 +248,42 @@ watch(
           width: 100%;
           height: 100%;
           display: flex;
+          .video-item-wrapper {
+            position: relative;
+            background: #000;
+            border-radius: 2rem;
+          }
+          .video-glow {
+            position: absolute;
+            top: -40px;
+            left: -40px;
+            right: -40px;
+            bottom: -40px;
+            background-size: cover;
+            background-position: center;
+            filter: blur(60px) brightness(0.8) saturate(2);
+            opacity: 0;
+            z-index: -1;
+            border-radius: 2rem;
+            transition: opacity 0.8s ease;
+
+            &.glow-active {
+              opacity: 0.6;
+            }
+          }
+          .sidebar-hidden {
+            width: 0 !important;
+            opacity: 0;
+            overflow: hidden;
+            margin-left: 0 !important;
+            pointer-events: none;
+          }
+          :deep(.el-scrollbar) {
+            transition: width 0.4s ease, opacity 0.4s ease, margin-left 0.4s ease;
+            flex-shrink: 0;
+            width: 284px;
+            margin-left: 0;
+          }
           .list-wrapper {
             display: flex;
             flex-direction: column;

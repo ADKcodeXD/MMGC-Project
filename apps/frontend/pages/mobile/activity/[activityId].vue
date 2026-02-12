@@ -1,84 +1,117 @@
 <template>
-  <div class="body" :key="route.fullPath">
-    <var-app-bar round>
+  <div class="body">
+    <var-app-bar round color="transparent" text-color="#fff" style="--app-bar-height: 64px">
       <template #left>
-        <var-button round text color="transparent" text-color="#fff" @click="goHome">
-          <var-icon name="home" :size="24" />
-        </var-button>
-      </template>
-
-      <template #right>
         <div class="flex items-center">
-          <var-menu-select
-            :modelValue="locale"
-            @update:model-value="handleLocale"
-            size="large"
-            placement="top"
-          >
-            <var-button round text color="transparent" text-color="#fff">
-              <Icon name="ion:language-sharp" size="24"></Icon>
-            </var-button>
-            <template #options>
-              <var-menu-option label="中文" value="cn" />
-              <var-menu-option label="English" value="en" />
-              <var-menu-option label="日本語" value="jp" />
-            </template>
-          </var-menu-select>
-
           <var-button
             round
             text
             color="transparent"
             text-color="#fff"
-            @click="goLogin"
-            v-if="!isUserInfo"
+            @click="mobileMenuOpen = true"
           >
-            <Icon name="ant-design:user-outlined" size="24"></Icon>
+            <var-icon name="menu" :size="24" />
           </var-button>
-          <MobileAvatar v-else />
+          <div
+            v-if="globalStore.currentActivityData?.activityLogo"
+            class="ml-2 h-12 w-auto flex items-center"
+            @click="goHome"
+          >
+            <MyCustomImage :img="globalStore.currentActivityData.activityLogo" class="h-8 w-auto" />
+          </div>
         </div>
       </template>
 
-      <template #content>
-        <var-tabs
-          color="transparent"
-          active-color="#fff"
-          inactive-color="#ddd"
-          elevation
-          v-model:active="currentRoute"
-          @update:active="changeRoute"
-        >
-          <var-tab name="about"
-            ><Icon name="tabler:file-description" size="1rem" class="mr-1"></Icon
-            >{{ $t('desc') }}</var-tab
-          >
-          <var-tab name="main"
-            ><Icon name="ic:round-ondemand-video" size="1rem" class="mr-1"></Icon
-            >{{ $t('mainStage') }}</var-tab
-          >
-          <var-tab name="more">
+      <template #right>
+        <ClientOnly>
+          <div class="flex items-center">
             <var-menu-select
-              :modelValue="currentRoute"
-              @update:model-value="changeRoute"
+              :modelValue="locale"
+              @update:model-value="handleLocale"
               size="large"
               placement="top"
             >
               <var-button round text color="transparent" text-color="#fff">
-                <Icon name="ion:more" size="24"></Icon>
+                <Icon name="ion:language-sharp" size="24"></Icon>
               </var-button>
               <template #options>
-                <var-menu-option :label="$t('organSponsor')" value="support" />
-                <var-menu-option :label="$t('history')" value="history" />
-                <var-menu-option :label="$t('matchStatistics')" value="statistics" />
-              </template> </var-menu-select
-          ></var-tab>
-        </var-tabs>
+                <var-menu-option label="中文" value="cn" />
+                <var-menu-option label="English" value="en" />
+                <var-menu-option label="日本語" value="jp" />
+              </template>
+            </var-menu-select>
+
+            <var-button
+              round
+              text
+              color="transparent"
+              text-color="#fff"
+              @click="goLogin"
+              v-if="!isUserInfo"
+            >
+              <Icon name="ant-design:user-outlined" size="24"></Icon>
+            </var-button>
+            <MobileAvatar v-else />
+          </div>
+        </ClientOnly>
       </template>
+
     </var-app-bar>
     <div class="flex items-center justify-center heightss">
       <NuxtPage :activityId="activityId" />
     </div>
     <div class="bg"></div>
+
+    <!-- 移动端侧边栏导航 -->
+    <transition name="fade">
+      <div v-if="mobileMenuOpen" class="mobile-nav-overlay" @click="mobileMenuOpen = false">
+        <div class="mobile-nav-drawer" @click.stop>
+          <p class="mobile-nav-title">{{ $t('menu') }}</p>
+          <nav class="mobile-nav-list">
+            <a
+              class="mobile-nav-item"
+              :class="{ active: isCurrent(`/mobile/activity/${activityId}/about`) }"
+              @click.prevent="goSection('about')"
+            >
+              <Icon name="tabler:file-description" size="1rem" class="mr-2" />
+              <span>{{ $t('desc') }}</span>
+            </a>
+            <a
+              class="mobile-nav-item"
+              :class="{ active: isCurrent(`/mobile/activity/${activityId}/main`) }"
+              @click.prevent="goSection('main')"
+            >
+              <Icon name="ic:round-ondemand-video" size="1rem" class="mr-2" />
+              <span>{{ $t('mainStage') }}</span>
+            </a>
+            <a
+              class="mobile-nav-item"
+              :class="{ active: isCurrent(`/mobile/activity/${activityId}/support`) }"
+              @click.prevent="goSection('support')"
+            >
+              <Icon name="simple-icons:githubsponsors" size="1rem" class="mr-2" />
+              <span>{{ $t('organSponsor') }}</span>
+            </a>
+            <a
+              class="mobile-nav-item"
+              :class="{ active: isCurrent(`/mobile/activity/${activityId}/history`) }"
+              @click.prevent="goSection('history')"
+            >
+              <Icon name="ic:baseline-history" size="1rem" class="mr-2" />
+              <span>{{ $t('history') }}</span>
+            </a>
+            <a
+              class="mobile-nav-item"
+              :class="{ active: isCurrent(`/mobile/activity/${activityId}/statistics`) }"
+              @click.prevent="goSection('statistics')"
+            >
+              <Icon name="mdi:chart-bar" size="1rem" class="mr-2" />
+              <span>{{ $t('matchStatistics') }}</span>
+            </a>
+          </nav>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -95,6 +128,8 @@ const { goHome, goLogin, handleLocale } = useGoMobile()
 
 const activityId =
   parseInt(route.params.activityId?.toString()) || globalStore.config?.currentActivityId
+
+const mobileMenuOpen = ref(false)
 
 onMounted(() => {
   return StyleProvider({
@@ -130,16 +165,17 @@ const changeRoute = (routepath: any) => {
   navigateTo(route?.fullPath || '/')
 }
 
-const currentRoute = computed(() => {
-  const arr = route.path && route.path.split('/')
-  let lastMatchUrl = arr[arr.length - 1]
-  if (lastMatchUrl && lastMatchUrl.indexOf('?')) {
-    lastMatchUrl = lastMatchUrl.split('?')[0]
-  }
-  return lastMatchUrl
-})
-
 const { isUserInfo } = useMyInfo()
+
+const goSection = (key: string) => {
+  mobileMenuOpen.value = false
+  changeRoute(key)
+}
+
+const isCurrent = (path: string) => {
+  const r = localeRoute(path)
+  return r?.path === route.path
+}
 </script>
 
 <style lang="scss" scoped>
@@ -168,5 +204,60 @@ const { isUserInfo } = useMyInfo()
   flex-direction: column;
   align-items: center;
   position: absolute;
+}
+
+.mobile-nav-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: flex;
+}
+
+.mobile-nav-drawer {
+  width: 70%;
+  max-width: 260px;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-nav-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 1rem;
+}
+
+.mobile-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mobile-nav-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.25rem;
+  color: #ddd;
+  text-decoration: none;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.mobile-nav-item.active {
+  color: $themeColor;
+  background: rgba(255, 185, 97, 0.12);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

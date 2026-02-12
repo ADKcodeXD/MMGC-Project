@@ -149,6 +149,8 @@
   "statisticsTitle": "MMGC参加記録",
   "viewOtherActivities": "他のイベントを見る",
   "noData": "データがありません",
+  "sponsoredBy": "本イベントは {sponsor} の提供でお送りします",
+  "thanks": "謝辞",
   "staffRole": {
     "organizer": "主催者",
     "judge": "審査員",

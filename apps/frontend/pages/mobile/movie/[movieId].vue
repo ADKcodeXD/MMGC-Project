@@ -1,12 +1,12 @@
 <template>
   <div class="body" ref="body">
-    <var-app-bar round color="rgb(157 89 0)" text-color="#fff" style="--app-bar-height: 64px">
+    <var-app-bar round color="transparent" text-color="#fff" style="--app-bar-height: 64px">
       <template #default>
         <div class="flex flex-col justify-start items-start ml-2" v-if="movieDetail">
           <p class="desc-title mr-4 font-bold">
             {{ movieDetail?.movieName[locale] || movieDetail?.movieName['cn'] }}
           </p>
-          <div class="flex">
+          <div class="flex items-center flex-wrap gap-1">
             <span class="tag-primary">
               {{ $t('activityMovies', [movieDetail?.activityVo?.activityId]) }}
             </span>
@@ -17,39 +17,56 @@
         </div>
       </template>
       <template #left>
-        <var-button color="transparent" text-color="#fff" round text @click="goHome">
-          <var-icon name="home" :size="28" />
-        </var-button>
+        <div class="flex items-center">
+          <var-button
+            color="transparent"
+            text-color="#fff"
+            round
+            text
+            @click="mobileMenuOpen = true"
+          >
+            <var-icon name="menu" :size="24" />
+          </var-button>
+          <div
+            v-if="currentActivityLogo"
+            class="ml-2 h-8 w-auto flex items-center"
+            @click="goHome"
+          >
+            <MyCustomImage :img="currentActivityLogo" class="h-8 w-auto" />
+          </div>
+        </div>
       </template>
 
       <template #right>
-        <var-menu-select
-          :modelValue="locale"
-          @update:model-value="handleLocale"
-          size="large"
-          placement="top"
-        >
-          <var-button round text color="transparent" text-color="#fff">
-            <Icon name="ion:language-sharp" size="24"></Icon>
-          </var-button>
-          <template #options>
-            <var-menu-option label="中文" value="cn" />
-            <var-menu-option label="English" value="en" />
-            <var-menu-option label="日本語" value="jp" />
-          </template>
-        </var-menu-select>
+        <ClientOnly>
+          <var-menu-select
+            :modelValue="locale"
+            @update:model-value="handleLocale"
+            size="large"
+            placement="top"
+          >
+            <var-button round text color="transparent" text-color="#fff">
+              <Icon name="ion:language-sharp" size="24"></Icon>
+            </var-button>
+            <template #options>
+              <var-menu-option label="中文" value="cn" />
+              <var-menu-option label="English" value="en" />
+              <var-menu-option label="日本語" value="jp" />
+            </template>
+          </var-menu-select>
 
-        <var-button
-          round
-          text
-          color="transparent"
-          text-color="#fff"
-          @click="goLogin"
-          v-if="!isUserInfo"
-        >
-          <Icon name="ant-design:user-outlined" size="24"></Icon>
-        </var-button>
-        <MemberPop v-else :member-vo="userInfo" />
+          <var-button
+            round
+            text
+            color="transparent"
+            text-color="#fff"
+            @click="goLogin"
+            v-if="!isUserInfo"
+          >
+            <Icon name="ant-design:user-outlined" size="24"></Icon>
+          </var-button>
+          <MemberPop v-else :member-vo="userInfo" />
+        </ClientOnly>
       </template>
     </var-app-bar>
     <div class="my-2">
@@ -275,6 +292,56 @@
     </div>
     <p class="title" v-else>{{ $t('noOpen') }}</p>
   </div>
+  <!-- 移动端侧边栏导航 -->
+  <transition name="fade">
+    <div v-if="mobileMenuOpen" class="mobile-nav-overlay" @click="mobileMenuOpen = false">
+      <div class="mobile-nav-drawer" @click.stop>
+        <p class="mobile-nav-title">{{ $t('menu') }}</p>
+        <nav class="mobile-nav-list">
+          <a
+            class="mobile-nav-item"
+            :class="{ active: isCurrent(`/mobile/activity/${currentActivityId}/about`) }"
+            @click.prevent="goSection('about')"
+          >
+            <Icon name="tabler:file-description" size="1rem" class="mr-2" />
+            <span>{{ $t('desc') }}</span>
+          </a>
+          <a
+            class="mobile-nav-item"
+            :class="{ active: isCurrent(`/mobile/activity/${currentActivityId}/main`) }"
+            @click.prevent="goSection('main')"
+          >
+            <Icon name="ic:round-ondemand-video" size="1rem" class="mr-2" />
+            <span>{{ $t('mainStage') }}</span>
+          </a>
+          <a
+            class="mobile-nav-item"
+            :class="{ active: isCurrent(`/mobile/activity/${currentActivityId}/support`) }"
+            @click.prevent="goSection('support')"
+          >
+            <Icon name="simple-icons:githubsponsors" size="1rem" class="mr-2" />
+            <span>{{ $t('organSponsor') }}</span>
+          </a>
+          <a
+            class="mobile-nav-item"
+            :class="{ active: isCurrent(`/mobile/activity/${currentActivityId}/history`) }"
+            @click.prevent="goSection('history')"
+          >
+            <Icon name="ic:baseline-history" size="1rem" class="mr-2" />
+            <span>{{ $t('history') }}</span>
+          </a>
+          <a
+            class="mobile-nav-item"
+            :class="{ active: isCurrent(`/mobile/activity/${currentActivityId}/statistics`) }"
+            @click.prevent="goSection('statistics')"
+          >
+            <Icon name="mdi:chart-bar" size="1rem" class="mr-2" />
+            <span>{{ $t('matchStatistics') }}</span>
+          </a>
+        </nav>
+      </div>
+    </div>
+  </transition>
   <el-dialog v-model="pollDialogShow" :title="$t('PollLink')" width="400" draggable>
     <div class="p-4">
       <div>
@@ -333,10 +400,19 @@ const {
 const center = ref(false)
 const { locale } = useCurrentLocale()
 const { t } = useI18n()
+const globalStore = useGlobalStore()
 const { unloading } = useGlobalStore()
 const { pollMovie, likeOrUnLike } = useMovieOperate()
 const { goHome, goLogin, handleLocale } = useGoMobile()
 const { logout, userInfo, isUserInfo } = useMyInfo()
+
+const mobileMenuOpen = ref(false)
+const currentActivityId = computed(
+  () => movieDetail.value?.activityVo?.activityId || globalStore.config?.currentActivityId
+)
+const currentActivityLogo = computed(
+  () => movieDetail.value?.activityVo?.activityLogo || globalStore.currentActivityData?.activityLogo
+)
 
 const pollByLink = (movie: MovieVo, dayPollLink?: Sns | null) => {
   if (dayPollLink && (dayPollLink.bilibili || dayPollLink.twitter || dayPollLink.personalWebsite)) {
@@ -355,6 +431,18 @@ watchEffect(() => {
     unloading()
   })
 })
+
+const goSection = (key: string) => {
+  if (!currentActivityId.value) return
+  mobileMenuOpen.value = false
+  const route = localeRoute(`/mobile/activity/${currentActivityId.value}/${key}`)
+  navigateTo(route?.fullPath || '/')
+}
+
+const isCurrent = (path: string) => {
+  const r = localeRoute(path)
+  return r?.path === useRoute().path
+}
 
 onMounted(async () => {
   const bg = new Image()
@@ -504,6 +592,61 @@ onMounted(async () => {
       }
     }
   }
+}
+
+.mobile-nav-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: flex;
+}
+
+.mobile-nav-drawer {
+  width: 70%;
+  max-width: 260px;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-nav-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 1rem;
+}
+
+.mobile-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mobile-nav-item {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 0.25rem;
+  color: #ddd;
+  text-decoration: none;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.mobile-nav-item.active {
+  color: $themeColor;
+  background: rgba(255, 185, 97, 0.12);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 :deep(.el-textarea__inner) {

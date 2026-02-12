@@ -3,7 +3,7 @@
     <Transition mode="out-in">
       <div class="about-page" ref="scrollContainer" v-if="activityData && !isLoading">
         <!-- desc 介绍 -->
-        <section ref="sectionDesc" class="about-section">
+        <section ref="sectionDesc" class="about-section first-section">
           <div class="desc-like">
             <div>
               <p class="title">
@@ -13,6 +13,31 @@
                 v-if="activityData.desc"
                 v-html="activityData.desc[locale] || activityData.desc['cn']"
               />
+            </div>
+          </div>
+        </section>
+        <!-- 鸣谢 -->
+        <section
+          ref="sectionThanks"
+          class="about-section thanks-section"
+          v-if="activityData.sponsorListVo && activityData.sponsorListVo.length > 0"
+        >
+          <div class="desc-like thanks-container">
+            <p class="title text-center">{{ $t('thanks') }}</p>
+            <p class="thanks-text">
+              {{ $t('sponsoredBy', { sponsor: sponsorNames }) }}
+            </p>
+            <div class="thanks-logos">
+              <MyCustomImage :img="activityData.activityLogo" class="thanks-logo" />
+              <span class="thanks-x">×</span>
+              <div
+                v-for="(sponsor, idx) in activityData.sponsorListVo"
+                :key="sponsor.sponsorId"
+                class="thanks-sponsor-item"
+              >
+                <MyCustomImage :img="sponsor.sponsorLogo" class="thanks-logo" />
+                <span v-if="idx < activityData.sponsorListVo.length - 1" class="thanks-x">×</span>
+              </div>
             </div>
           </div>
         </section>
@@ -101,12 +126,22 @@ const sectionStaff = ref<HTMLElement>()
 const sectionRules = ref<HTMLElement>()
 const sectionOther = ref<HTMLElement>()
 const sectionFaq = ref<HTMLElement>()
+const sectionThanks = ref<HTMLElement>()
 const currentSection = ref(0)
+
+const sponsorNames = computed(() => {
+  if (!activityData.value?.sponsorListVo) return ''
+  return activityData.value.sponsorListVo
+    .map(s => s.sponsorName?.[locale.value] || s.sponsorName?.cn || '')
+    .filter(Boolean)
+    .join('、')
+})
 
 const navItems = computed(() => {
   const list: { name: string; key: string }[] = []
   if (!activityData.value) return list
   list.push({ name: 'activityDesc', key: 'desc' })
+  if (activityData.value.sponsorListVo?.length) list.push({ name: 'thanks', key: 'thanks' })
   if (activityData.value.staff?.length) list.push({ name: 'Staff', key: 'staff' })
   if (activityData.value.rules?.cn) list.push({ name: 'activityRules', key: 'rules' })
   if (activityData.value.timesorother?.cn) list.push({ name: 'warning', key: 'other' })
@@ -116,6 +151,7 @@ const navItems = computed(() => {
 
 const sectionRefs = computed(() => {
   const refs: (HTMLElement | undefined)[] = [sectionDesc.value]
+  if (activityData.value?.sponsorListVo?.length) refs.push(sectionThanks.value)
   if (activityData.value?.staff?.length) refs.push(sectionStaff.value)
   if (activityData.value?.rules?.cn) refs.push(sectionRules.value)
   if (activityData.value?.timesorother?.cn) refs.push(sectionOther.value)
@@ -318,6 +354,51 @@ watchEffect(() => {
   width: 100%;
 }
 
+/* 鸣谢 */
+.thanks-section {
+  min-height: 40vh;
+}
+
+.thanks-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.thanks-text {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+}
+
+.thanks-logos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.thanks-logo {
+  width: 240px;
+  height: 240px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.15));
+}
+
+.thanks-sponsor-item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.thanks-x {
+  font-size: 28px;
+  font-weight: bold;
+  color: $themeColor;
+}
+
 /* 侧边导航 */
 .about-nav {
   position: fixed;
@@ -331,16 +412,16 @@ watchEffect(() => {
 .about-nav-track {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 32px;
   position: relative;
 
   &::before {
     content: '';
     position: absolute;
-    left: 5px;
-    top: 6px;
-    bottom: 6px;
-    width: 1px;
+    left: 7px;
+    top: 8px;
+    bottom: 8px;
+    width: 2px;
     background: rgba(255, 255, 255, 0.15);
   }
 }
@@ -348,7 +429,7 @@ watchEffect(() => {
 .about-nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   cursor: pointer;
   transition: all 0.3s ease;
 
@@ -359,7 +440,7 @@ watchEffect(() => {
   &.active {
     .about-nav-dot {
       background: $themeColor;
-      box-shadow: 0 0 8px $themeColor;
+      box-shadow: 0 0 10px $themeColor;
       transform: scale(1.4);
     }
     .about-nav-label {
@@ -370,8 +451,8 @@ watchEffect(() => {
 }
 
 .about-nav-dot {
-  width: 11px;
-  height: 11px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: $themeNotActiveColor;
   flex-shrink: 0;
@@ -381,12 +462,12 @@ watchEffect(() => {
 }
 
 .about-nav-label {
-  font-size: 13px;
+  font-size: 16px;
   color: $themeNotActiveColor;
   white-space: nowrap;
   opacity: 0.5;
   transition: all 0.3s ease;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 @media screen and (min-width: 1440px) {
