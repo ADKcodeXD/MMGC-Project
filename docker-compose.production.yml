@@ -1,6 +1,11 @@
 # Production override: reads env from /www/wwwroot/env/
-# Usage: docker compose -f docker-compose.yml -f docker-compose.production.yml up -d --build
+# Usage: docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
 services:
+  mongodb:
+    volumes:
+      # 直接挂载宿主机已有的 MongoDB 数据目录，无需迁移
+      - /www/server/mongodb/data:/data/db
+
   backend:
     volumes:
       - /www/wwwroot/env/backend.env.production:/app/apps/backend/.env.production:ro

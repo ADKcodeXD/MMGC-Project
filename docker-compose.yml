@@ -1,6 +1,34 @@
 # 镜像前缀：默认 ghcr.io/adkcodexd；用阿里云 ACR 时在 .env 写 IMAGE_REGISTRY=crpi-xxx.personal.cr.aliyuncs.com/mmgc
-# 网络：MongoDB/Redis 在宿主机时，backend 用 host.docker.internal 连宿主机；front/admin 通过服务名 backend 访问 API
 services:
+  # ---- 数据层 ----
+  mongodb:
+    image: mongo:6
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: mmgc
+      # ⚠️ MONGO_INITDB 只在空数据目录首次启动时生效
+      # 你的已有数据（authorization: disabled）里没有用户，启用会导致连接失败
+      # 如需开启认证，先用 mongosh 手动创建用户，再取消注释
+      # MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
+      # MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-changeme}
+    networks:
+      - mmgc-net
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - mmgc-net
+
+  # ---- 应用层 ----
   backend:
     image: ${IMAGE_REGISTRY:-ghcr.io/adkcodexd}/mmgc-backend:latest
     restart: unless-stopped
@@ -10,8 +38,9 @@ services:
       - ./env/backend.env.production:/app/apps/backend/.env.production:ro
     environment:
       NODE_ENV: prod
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    depends_on:
+      - mongodb
+      - redis
     networks:
       - mmgc-net
 
@@ -24,6 +53,8 @@ services:
       - ./env/frontend.env.production:/app/env/.env.production:ro
     environment:
       NUXT_PUBLIC_API_LOCAL: http://backend:8055
+    depends_on:
+      - backend
     networks:
       - mmgc-net
 
@@ -35,6 +66,10 @@ services:
       - "8080:80"
     networks:
       - mmgc-net
+
+volumes:
+  mongo-data:
+  redis-data:
 
 networks:
   mmgc-net:
