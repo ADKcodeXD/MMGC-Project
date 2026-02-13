@@ -1,14 +1,19 @@
 # 镜像前缀：默认 ghcr.io/adkcodexd；用阿里云 ACR 时在 .env 写 IMAGE_REGISTRY=crpi-xxx.personal.cr.aliyuncs.com/mmgc
+# 网络：MongoDB/Redis 在宿主机时，backend 用 host.docker.internal 连宿主机；front/admin 通过服务名 backend 访问 API
 services:
-  # 使用 host 网络，使 127.0.0.1 指向宿主机，可直接连本机 MongoDB/Redis
   backend:
     image: ${IMAGE_REGISTRY:-ghcr.io/adkcodexd}/mmgc-backend:latest
     restart: unless-stopped
-    network_mode: host
+    ports:
+      - "8055:8055"
     volumes:
       - ./env/backend.env.production:/app/apps/backend/.env.production:ro
     environment:
       NODE_ENV: prod
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - mmgc-net
 
   frontend:
     image: ${IMAGE_REGISTRY:-ghcr.io/adkcodexd}/mmgc-frontend:latest
@@ -18,13 +23,11 @@ services:
     volumes:
       - ./env/frontend.env.production:/app/env/.env.production:ro
     environment:
-      # 后端在宿主机 8055，前端容器通过 host.docker.internal 访问
-      NUXT_PUBLIC_API_LOCAL: http://host.docker.internal:8055
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      NUXT_PUBLIC_API_LOCAL: http://backend:8055
     networks:
       - mmgc-net
 
+  # Admin 为 SPA，API 请求由浏览器发起，需在构建时配置 VITE_GLOB_API_URL 为公网可访问的 API 地址（或 Nginx 反代）
   admin:
     image: ${IMAGE_REGISTRY:-ghcr.io/adkcodexd}/mmgc-admin:latest
     restart: unless-stopped

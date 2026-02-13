@@ -85,7 +85,7 @@ export default defineNuxtConfig({
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'https://mirai-mad.com',
       siteUrl: process.env.NUXT_PUBLIC_API_BASE || 'https://mirai-mad.com',
       apiPrefix: process.env.NUXT_PUBLIC_API_PREFIX || '/mmgcApi',
-      apiLocal: process.env.NUXT_PUBLIC_API_LOCAL || 'http://localhost:8055'
+      apiLocal: process.env.NUXT_PUBLIC_API_LOCAL || 'http://backend:8055'
     }
   },
 
