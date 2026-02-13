@@ -4,26 +4,25 @@ services:
   mongodb:
     image: mongo:6
     restart: unless-stopped
-    command: ["--directoryperdb"]
-    ports:
-      - "27017:27017"
+    command: ["--directoryperdb", "--auth"]
+    # ⚠️ 不要暴露端口到公网！容器间通过 mmgc-net 内部网络通信即可
+    # ports:
+    #   - "127.0.0.1:27017:27017"  # 仅需本地调试时取消注释
     volumes:
       - mongo-data:/data/db
     environment:
       MONGO_INITDB_DATABASE: mmgc
-      # ⚠️ MONGO_INITDB 只在空数据目录首次启动时生效
-      # 你的已有数据（authorization: disabled）里没有用户，启用会导致连接失败
-      # 如需开启认证，先用 mongosh 手动创建用户，再取消注释
-      # MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-admin}
-      # MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-changeme}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME:-mmgc_admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-changeme_strong_password}
     networks:
       - mmgc-net
 
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    ports:
-      - "6379:6379"
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-changeme_redis_password}"]
+    # ports:
+    #   - "127.0.0.1:6379:6379"  # 仅需本地调试时取消注释
     volumes:
       - redis-data:/data
     networks:
