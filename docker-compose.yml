@@ -4,6 +4,7 @@ services:
   mongodb:
     image: mongo:6
     restart: unless-stopped
+    command: ["--directoryperdb"]
     ports:
       - "27017:27017"
     volumes:
