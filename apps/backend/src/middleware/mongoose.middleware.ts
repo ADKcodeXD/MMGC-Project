@@ -4,19 +4,24 @@ import config from '../config/config.default'
 import logger from '~/common/utils/log4j'
 
 export default async (ctx: Context, next: any) => {
-	mongoose.connect(`${config.MONGO_PATH}/${config.MONGO_COLLECTION}`, {
-		auth: {
-			username: config.MONGO_USERNAME || undefined,
-			password: config.MONGO_PASSWORD || undefined
-		}
-	})
+  const hasAuth = config.MONGO_USERNAME && config.MONGO_PASSWORD
+  mongoose.connect(`${config.MONGO_PATH}/${config.MONGO_COLLECTION}`, {
+    ...(hasAuth
+      ? {
+          auth: {
+            username: config.MONGO_USERNAME,
+            password: config.MONGO_PASSWORD
+          },
+          authSource: 'admin'
+        }
+      : {})
+  })
 
-	const db = mongoose.connection
+  const db = mongoose.connection
 
-	db.on('error', () => logger.error('Connected Error'))
-	db.once('open', function () {
-		logger.info('Connected to MongoDB')
-	})
-	await next()
+  db.on('error', () => logger.error('Connected Error'))
+  db.once('open', function () {
+    logger.info('Connected to MongoDB')
+  })
+  await next()
 }
-
