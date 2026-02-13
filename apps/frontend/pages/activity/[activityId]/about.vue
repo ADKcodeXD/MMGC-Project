@@ -56,15 +56,43 @@
                   <div v-for="member in members" :key="member.name" class="staff-member-card">
                     <a :href="member.link" target="_blank" v-if="member.link" class="block">
                       <MyCustomImage
-                        :img="member.avatar || '/default-avatar.png'"
+                        v-if="member.avatar"
+                        :img="member.avatar"
                         class="staff-avatar hover:border-primary transition-all"
                       />
+                      <div
+                        v-else
+                        class="staff-avatar staff-avatar-placeholder hover:border-primary transition-all"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path
+                            d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"
+                          />
+                        </svg>
+                      </div>
                     </a>
-                    <MyCustomImage
-                      v-else
-                      :img="member.avatar || '/default-avatar.png'"
-                      class="staff-avatar"
-                    />
+                    <template v-else>
+                      <MyCustomImage
+                        v-if="member.avatar"
+                        :img="member.avatar"
+                        class="staff-avatar"
+                      />
+                      <div v-else class="staff-avatar staff-avatar-placeholder">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                        >
+                          <path
+                            d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"
+                          />
+                        </svg>
+                      </div>
+                    </template>
                     <span class="staff-name">{{ member.name }}</span>
                   </div>
                 </div>
@@ -342,6 +370,18 @@ watchEffect(() => {
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.1);
   object-fit: cover;
+}
+
+.staff-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  svg {
+    width: 36px;
+    height: 36px;
+    color: rgba(255, 255, 255, 0.35);
+  }
 }
 
 .staff-name {

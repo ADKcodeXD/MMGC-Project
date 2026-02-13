@@ -49,15 +49,52 @@
                     >
                       <a :href="member.link" target="_blank" v-if="member.link" class="block">
                         <img
-                          :src="member.avatar || '/default-avatar.png'"
+                          v-if="member.avatar"
+                          :src="member.avatar"
                           class="w-12 h-12 rounded-full border border-gray-200"
                         />
+                        <div
+                          v-else
+                          class="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center"
+                          style="background: rgba(255, 255, 255, 0.08)"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            class="w-7 h-7"
+                            style="color: rgba(255, 255, 255, 0.35)"
+                          >
+                            <path
+                              d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"
+                            />
+                          </svg>
+                        </div>
                       </a>
-                      <img
-                        v-else
-                        :src="member.avatar || '/default-avatar.png'"
-                        class="w-12 h-12 rounded-full border border-gray-200"
-                      />
+                      <template v-else>
+                        <img
+                          v-if="member.avatar"
+                          :src="member.avatar"
+                          class="w-12 h-12 rounded-full border border-gray-200"
+                        />
+                        <div
+                          v-else
+                          class="w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center"
+                          style="background: rgba(255, 255, 255, 0.08)"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            class="w-7 h-7"
+                            style="color: rgba(255, 255, 255, 0.35)"
+                          >
+                            <path
+                              d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"
+                            />
+                          </svg>
+                        </div>
+                      </template>
                       <span class="text-xs mt-1 text-center px-2">{{ member.name }}</span>
                     </div>
                   </div>
@@ -100,7 +137,7 @@ const { activityData, isLoading } = useAboutPage()
 const sponsorNames = computed(() => {
   if (!activityData.value?.sponsorListVo) return ''
   return activityData.value.sponsorListVo
-    .map((s) => s.sponsorName?.[locale.value] || s.sponsorName?.cn || '')
+    .map(s => s.sponsorName?.[locale.value] || s.sponsorName?.cn || '')
     .filter(Boolean)
     .join('、')
 })
