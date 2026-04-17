@@ -8,6 +8,7 @@
     "start": "turbo start"
   },
   "devDependencies": {
+    "@nuxtjs/sitemap": "^7.6.0",
     "turbo": "latest"
   },
   "pnpm": {

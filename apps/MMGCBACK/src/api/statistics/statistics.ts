@@ -7,6 +7,7 @@ enum Api {
   GET_ALL_LIST = '/statistics/getAuthorRank',
   DELETE = '/statistics/deleteAuthor',
   UPDATE = '/statistics/updateAuthor',
+  GET_SITE_TRAFFIC = '/statistics/siteTraffic',
 }
 
 export function saveAuthor(params: StatisticsParams, mode?: ErrorMessageMode) {
@@ -33,6 +34,19 @@ export function deleteAuthor(id: any, mode?: ErrorMessageMode) {
 export function updateAuthor(sponsor: StatisticsUpdateParams, mode?: ErrorMessageMode) {
   return defHttp.post<null>(
     { url: Api.UPDATE, params: sponsor },
+    { errorMessageMode: mode || 'none' },
+  )
+}
+
+export interface SiteTrafficData {
+  date: string;
+  dayUv: number;
+  fluxGB: number;
+}
+
+export function getSiteTrafficStats(days?: number, mode?: ErrorMessageMode) {
+  return defHttp.get<SiteTrafficData[]>(
+    { url: Api.GET_SITE_TRAFFIC, params: { days } },
     { errorMessageMode: mode || 'none' },
   )
 }

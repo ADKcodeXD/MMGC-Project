@@ -18,6 +18,16 @@ export default defineNuxtConfig({
     }
   },
 
+  site: {
+    url: process.env.NUXT_PUBLIC_API_BASE || 'https://mirai-mad.com'
+  },
+
+  sitemap: {
+    sources: [
+      '/api/__sitemap__/urls'
+    ]
+  },
+
   css: ['@/assets/scss/index.scss', '@/assets/scss/export.scss', '@/assets/scss/iconfont.scss'],
 
   imports: {
@@ -73,7 +83,8 @@ export default defineNuxtConfig({
     '@element-plus/nuxt',
     'nuxt-icon',
     'nuxt-lodash',
-    'dayjs-nuxt'
+    'dayjs-nuxt',
+    '@nuxtjs/sitemap'
   ],
 
   elementPlus: {

@@ -10,7 +10,7 @@ export default class TranslateService {
 	}
 
 	private get model() {
-		return config.OPENROUTER_MODEL || 'google/gemini-flash-1.5'
+		return config.OPENROUTER_MODEL || 'google/gemma-4-31b-it:free'
 	}
 
 	async translate(text: string, isHtml?: boolean): Promise<I18N | null> {

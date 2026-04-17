@@ -1,7 +1,7 @@
 import { MemberVo } from 'Member'
 import { StatisticsParams, StatisticsUpdateParams } from 'Statistics'
 import { Auth } from '~/common/decorator/auth'
-import { Controller, PostMapping, Body, User, Autowired, DeleteMapping, Param } from '~/common/decorator/decorator'
+import { Controller, PostMapping, Body, User, Autowired, DeleteMapping, Param, GetMapping } from '~/common/decorator/decorator'
 import Result from '~/common/result'
 import { addNewAuthorParamsValidate, updateAuthorParamsValidate } from '~/common/validate/validate'
 import { Validtor } from '~/middleware/ajv.middleware'
@@ -46,6 +46,12 @@ export default class StatisticsController {
   @Auth([ROLE.ADMIN, ROLE.SUBADMIN, ROLE.COMMITTER, ROLE.GROUPMEMBER], '/updateAuthor')
   async deleteAuthorInfo(@Param('id') id: string) {
     const res = await this.statisticsService.deleteAuthor(id)
+    return Result.success(res)
+  }
+
+  @GetMapping('/siteTraffic')
+  async getSiteTraffic(@Param('days') days?: number) {
+    const res = await this.statisticsService.getSiteTraffic(days || 7)
     return Result.success(res)
   }
 }
