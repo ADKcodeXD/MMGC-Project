@@ -42,15 +42,16 @@ export const useMovieDetail = () => {
   const getMovieDetail = async (movieId: number) => {
     const { data } = await getMovieDetailById(movieId)
     if (data) {
-      movieDetail.value = data
-      const keys = Object.keys(movieDetail.value.moviePlaylink) as any
+      const nextPlaySource: { url: string; label: keyof I18N }[] = []
+      const keys = Object.keys(data.moviePlaylink || {}) as (keyof I18N)[]
       keys.forEach((key: keyof I18N) => {
-        if (movieDetail.value && movieDetail.value.moviePlaylink[key]) {
-          if (movieDetail.value.moviePlaylink[key]) {
-            playSource.value.push({ url: movieDetail.value.moviePlaylink[key], label: key })
-          }
+        const url = data.moviePlaylink[key]
+        if (url) {
+          nextPlaySource.push({ url, label: key })
         }
       })
+      playSource.value = nextPlaySource
+      movieDetail.value = data
       snsSites.value = useSnsSites(data.movieLink)
     }
   }

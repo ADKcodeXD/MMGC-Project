@@ -6,16 +6,20 @@ import logger from '~/common/utils/log4j'
 @Service(true)
 export default class TranslateService {
 	private get apiKey() {
-		return config.OPENROUTER_API_KEY || ''
+		return config.OPENAI_API_KEY || ''
 	}
 
 	private get model() {
-		return config.OPENROUTER_MODEL || 'google/gemma-4-31b-it:free'
+		return config.OPENAI_MODEL || 'google/gemini-2.5-flash'
+	}
+
+	private get baseUrl() {
+		return config.OPENAI_BASE_URL || 'https://api.apifast.tech/v1'
 	}
 
 	async translate(text: string, isHtml?: boolean): Promise<I18N | null> {
 		if (!this.apiKey) {
-			logger.error('OPENROUTER_API_KEY is not configured')
+			logger.error('AI Translation API Key (OPENAI_API_KEY) is not configured')
 			return null
 		}
 
@@ -25,7 +29,7 @@ export default class TranslateService {
 
 		try {
 			const response = await axios.post(
-				'https://openrouter.ai/api/v1/chat/completions',
+				`${this.baseUrl}/chat/completions`,
 				{
 					model: this.model,
 					messages: [
@@ -45,7 +49,7 @@ export default class TranslateService {
 
 			const content = response.data?.choices?.[0]?.message?.content
 			if (!content) {
-				logger.error('Empty response from OpenRouter')
+				logger.error('Empty response from AI Translation API')
 				return null
 			}
 

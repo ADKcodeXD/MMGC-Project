@@ -1,9 +1,7 @@
 <template>
-  <div class="body" :key="$route.fullPath">
-    <ClientOnly>
-      <MMGCHeader class="flex-shrink-0" />
-    </ClientOnly>
-    <div class="flex items-center justify-center" style="height: 79%">
+  <div class="body">
+    <MMGCHeader class="flex-shrink-0" />
+    <div class="layout-content flex items-center justify-center">
       <slot></slot>
     </div>
     <div class="back">
@@ -37,11 +35,26 @@ const { currentActivityData } = globalState
     overflow: hidden;
     z-index: -11;
   }
+
+  .layout-content {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 0 16px calc(5.25rem + env(safe-area-inset-bottom));
+  }
 }
 
 @media screen and (min-width: 1024px) {
   .body {
     min-width: 1024px;
+  }
+}
+
+@media screen and (min-width: 1440px) {
+  .layout-content {
+    height: 79%;
+    padding: 0;
   }
 }
 </style>

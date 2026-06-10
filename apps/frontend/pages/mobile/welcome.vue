@@ -27,7 +27,7 @@ import { useGlobalStore } from '~~/stores/global'
 const localeRoute = useLocaleRoute()
 const globalState = useGlobalStore()
 const currentActivityId = computed(() => globalState.config?.currentActivityId || 0)
-const { activityData, isLoading } = useActivityDetail(currentActivityId.value)
+const { activityData, isLoading } = useActivityDetail(currentActivityId)
 
 const enterActivity = () => {
   if (activityData.value?.activityId) {

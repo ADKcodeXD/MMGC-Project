@@ -48,7 +48,7 @@
         <p class="text-left tip text-light-50 font-thin" v-else>搜索到 {{ total }} 条结果</p>
         <var-input v-model="pageParams.keyword" class="w-full" placeholder="搜索作者名">
           <template #prepend-icon>
-            <el-icon class="el-input__icon"><search /></el-icon>
+            <Icon name="ant-design:search-outlined" class="el-input__icon" />
           </template>
         </var-input>
       </div>
@@ -132,7 +132,6 @@
 </template>
 
 <script lang="ts" setup>
-import { Search } from '@element-plus/icons-vue'
 const styleVars = ref({
   '--table-background': '#2a2a2a',
   '--table-tbody-td-text-color': '#fff',

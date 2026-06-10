@@ -70,6 +70,7 @@
           <nav class="mobile-nav-list">
             <a
               class="mobile-nav-item"
+              :href="sectionHref('about')"
               :class="{ active: isCurrent(`/mobile/activity/${activityId}/about`) }"
               @click.prevent="goSection('about')"
             >
@@ -78,6 +79,7 @@
             </a>
             <a
               class="mobile-nav-item"
+              :href="sectionHref('main')"
               :class="{ active: isCurrent(`/mobile/activity/${activityId}/main`) }"
               @click.prevent="goSection('main')"
             >
@@ -86,6 +88,7 @@
             </a>
             <a
               class="mobile-nav-item"
+              :href="sectionHref('support')"
               :class="{ active: isCurrent(`/mobile/activity/${activityId}/support`) }"
               @click.prevent="goSection('support')"
             >
@@ -94,6 +97,7 @@
             </a>
             <a
               class="mobile-nav-item"
+              :href="sectionHref('history')"
               :class="{ active: isCurrent(`/mobile/activity/${activityId}/history`) }"
               @click.prevent="goSection('history')"
             >
@@ -102,6 +106,7 @@
             </a>
             <a
               class="mobile-nav-item"
+              :href="sectionHref('statistics')"
               :class="{ active: isCurrent(`/mobile/activity/${activityId}/statistics`) }"
               @click.prevent="goSection('statistics')"
             >
@@ -161,8 +166,7 @@ onMounted(() => {
 
 const changeRoute = (routepath: any) => {
   if (routepath === 'more') return
-  const route = localeRoute(`/mobile/activity/${activityId}/${routepath}`)
-  navigateTo(route?.fullPath || '/')
+  navigateTo(sectionHref(routepath))
 }
 
 const { isUserInfo } = useMyInfo()
@@ -170,6 +174,11 @@ const { isUserInfo } = useMyInfo()
 const goSection = (key: string) => {
   mobileMenuOpen.value = false
   changeRoute(key)
+}
+
+const sectionHref = (key: string) => {
+  const route = localeRoute(`/mobile/activity/${activityId}/${key}`)
+  return route?.fullPath || `/mobile/activity/${activityId}/${key}`
 }
 
 const isCurrent = (path: string) => {

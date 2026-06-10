@@ -151,6 +151,7 @@ const {
   handleSwitchDay,
   nextDay,
   prevDay,
+  updateMovieQuery,
   getDays,
   getVideoByDay
 } = useActivityMain()
@@ -177,6 +178,7 @@ const onVideoPause = () => {
 watch(activeVideo, () => {
   if (pauseTimer) clearTimeout(pauseTimer)
   isPlaying.value = false
+  updateMovieQuery(activeVideo.value?.movieId)
 })
 
 // Get activity list for dropdown
@@ -231,6 +233,7 @@ watch(
     min-width: 320px;
     width: 100%;
     height: 100%;
+    box-sizing: border-box;
     overflow: hidden;
     .fullpage-container {
       height: 100%;
@@ -248,10 +251,12 @@ watch(
           width: 100%;
           height: 100%;
           display: flex;
+          gap: 24px;
           .video-item-wrapper {
             position: relative;
             background: #000;
             border-radius: 2rem;
+            min-width: 0;
           }
           .video-glow {
             position: absolute;
@@ -282,12 +287,10 @@ watch(
             transition: width 0.4s ease, opacity 0.4s ease, margin-left 0.4s ease;
             flex-shrink: 0;
             width: 284px;
-            margin-left: 0;
           }
           .list-wrapper {
             display: flex;
             flex-direction: column;
-            margin-left: 24px;
             height: 100%;
             flex-shrink: 0;
             width: 260px;
@@ -340,7 +343,7 @@ watch(
       width: 100%;
       height: 100%;
       z-index: -10;
-      filter: brightness(0.6) blur(3px);
+      filter: brightness(0.5) blur(3px);
       // background-color: rgb(0, 7, 17);
       background-size: cover;
       transition: all ease 0.5s;
@@ -354,6 +357,122 @@ watch(
 @media screen and (min-width: 1440px) {
   .main {
     width: 90%;
+  }
+}
+
+@media screen and (max-width: 1439px) {
+  .main {
+    .fullpage-container {
+      .video-container {
+        height: calc(100% - 5rem);
+
+        .video-content {
+          flex-direction: column;
+          gap: 12px;
+
+          .video-item-wrapper {
+            flex: 1 1 auto;
+            min-height: 0;
+          }
+
+          :deep(.el-scrollbar) {
+            width: 100% !important;
+            height: 164px;
+            flex: 0 0 164px;
+            opacity: 1;
+            margin-left: 0;
+          }
+
+          .sidebar-hidden {
+            height: 0 !important;
+            width: 100% !important;
+            flex-basis: 0;
+          }
+
+          .list-wrapper {
+            width: max-content;
+            height: 100%;
+            flex-direction: row;
+            align-items: stretch;
+            gap: 12px;
+            padding: 0 4px 8px;
+
+            .movie-list-card {
+              width: 232px;
+              flex: 0 0 232px;
+
+              .movie-cover {
+                height: 96px;
+              }
+            }
+          }
+        }
+      }
+
+      .nav {
+        margin-top: 0.5rem;
+      }
+    }
+  }
+}
+
+@media screen and (max-height: 760px) {
+  .main {
+    .fullpage-container {
+      .video-container {
+        height: calc(100% - 4.5rem);
+
+        .video-content {
+          flex-direction: column;
+          gap: 10px;
+
+          .video-item-wrapper {
+            flex: 1 1 auto;
+            min-height: 0;
+          }
+
+          :deep(.el-scrollbar) {
+            width: 100% !important;
+            height: 136px;
+            flex: 0 0 136px;
+            flex-basis: 136px;
+            opacity: 1;
+            margin-left: 0;
+          }
+
+          .sidebar-hidden {
+            height: 0 !important;
+            width: 100% !important;
+            flex-basis: 0;
+          }
+
+          .list-wrapper {
+            width: max-content;
+            height: 100%;
+            flex-direction: row;
+            align-items: stretch;
+            gap: 10px;
+            padding: 0 4px 6px;
+
+            .movie-list-card {
+              width: 210px;
+              flex: 0 0 210px;
+              flex-basis: 210px;
+
+              .movie-cover {
+                height: 76px;
+              }
+            }
+          }
+        }
+      }
+
+      .nav {
+        .arrow {
+          font-size: 28px;
+        }
+      }
+    }
   }
 }
 

@@ -1,5 +1,6 @@
 node_modules
 .turbo
+.dev-online.*.log
 
 # Production env files (only .example files should be committed)
 env/*.production

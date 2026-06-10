@@ -83,6 +83,12 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           command_timeout: 30m
           script: |
+            if [ -n "${{ secrets.GHCR_TOKEN }}" ]; then
+              echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME || github.actor }}" --password-stdin
+            fi
+            if [ -n "${{ secrets.ALIYUN_ACR_PASSWORD }}" ] && [ -n "${{ secrets.ALIYUN_ACR_REGISTRY }}" ]; then
+              echo "${{ secrets.ALIYUN_ACR_PASSWORD }}" | docker login "${{ secrets.ALIYUN_ACR_REGISTRY }}" -u "${{ secrets.ALIYUN_ACR_USERNAME }}" --password-stdin
+            fi
             if [ ! -d "${{ secrets.PROJECT_PATH }}" ]; then
               git clone https://github.com/${{ github.repository }}.git ${{ secrets.PROJECT_PATH }}
             fi

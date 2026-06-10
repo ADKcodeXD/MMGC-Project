@@ -15,14 +15,12 @@
       <MyCustomLoading />
     </div>
     <img v-else-if="modelValue" :src="modelValue || ''" class="avatar" />
-    <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+    <Icon v-else name="ant-design:plus-outlined" class="avatar-uploader-icon" />
   </el-upload>
 </template>
 
 <script lang="ts" setup>
 import { ElMessage, type UploadRequestOptions } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
-
 import type { UploadProps } from 'element-plus'
 import { uploadImg } from '~~/composables/apis/upload'
 

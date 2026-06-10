@@ -27,8 +27,8 @@
             <p v-else class="flex items-center"><span class="dot"></span>{{ $t('owaru') }}</p>
           </div>
           <p>
-            {{ $dayjs(activity.startTime).format('MM-DD') }} -
-            {{ $dayjs(activity.endTime).format('MM-DD') }}
+            {{ dayjs(activity.startTime).format('MM-DD') }} -
+            {{ dayjs(activity.endTime).format('MM-DD') }}
           </p>
         </div>
       </template>

@@ -1,11 +1,7 @@
 <template>
   <ClientOnly>
     <div class="plyr-wrapper">
-      <div ref="playerContainer" class="plyr-container">
-        <video ref="videoElement" :poster="coverzip || ''" playsinline crossorigin="anonymous">
-          <source :src="currentSrc" type="video/mp4" />
-        </video>
-      </div>
+      <div ref="playerContainer" class="plyr-container"></div>
 
       <!-- 移动端横屏提示 -->
       <div v-if="showOrientationTip" class="orientation-tip">
@@ -19,28 +15,31 @@
         </div>
       </div>
 
-      <!-- 视频源切换按钮 -->
-      <div
-        v-if="sources.length > 1"
-        class="source-selector"
-        :class="{ 'selector-hidden': isVideoPlaying }"
-      >
-        <span class="source-label">{{ sourceText.label }}</span>
-        <button
-          v-for="item in sources"
-          :key="item.label"
-          :class="['source-btn', { active: item.label === currentLabel }]"
-          @click="switchSource(item.label)"
-        >
-          {{ getLanguageText(item.label) }}
-        </button>
+      <div v-if="sources.length > 1" class="source-selector">
+        <div class="source-copy">
+          <span class="source-label">
+            <Icon name="ion:language-sharp" size="14" />
+            {{ sourceText.label }}
+          </span>
+          <small>{{ sourceText.hint }}</small>
+        </div>
+        <div class="source-actions">
+          <button
+            v-for="item in sources"
+            :key="item.label"
+            :class="['source-btn', { active: item.label === currentLabel }]"
+            @click="switchSource(item.label)"
+          >
+            {{ getLanguageText(item.label) }}
+          </button>
+        </div>
       </div>
     </div>
   </ClientOnly>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { calcZip } from '~~/utils'
 
@@ -59,17 +58,20 @@ const emit = defineEmits(['onPlay', 'onAbort', 'onPause'])
 const { locale } = useI18n()
 
 const playerContainer = ref<HTMLElement>()
-const videoElement = ref<HTMLVideoElement>()
 let player: any = null
+let isUnmounted = false
+let isInitializing = false
 const currentLabel = ref(locale.value)
 const isVideoPlaying = ref(false)
 const isMobile = ref(false)
 const showOrientationTip = ref(false)
 
-// 多语言文本
 const languageTexts = {
-  zh: {
-    source: { label: '切换语言:' },
+  cn: {
+    source: {
+      label: '语言版本',
+      hint: '该作品有多语言版本'
+    },
     orientation: {
       title: '获得更好的观看体验',
       subtitle: '请将设备横向旋转'
@@ -80,13 +82,17 @@ const languageTexts = {
       'zh-TW': '繁体中文',
       en: 'English',
       'en-US': 'English',
+      jp: '日本語',
       ja: '日本語',
       'ja-JP': '日本語',
       default: '默认'
     }
   },
   en: {
-    source: { label: 'Language:' },
+    source: {
+      label: 'Language',
+      hint: 'This work has multiple language versions'
+    },
     orientation: {
       title: 'Better Viewing Experience',
       subtitle: 'Please rotate your device to landscape'
@@ -97,13 +103,17 @@ const languageTexts = {
       'zh-TW': '繁体中文',
       en: 'English',
       'en-US': 'English',
+      jp: '日本語',
       ja: '日本語',
       'ja-JP': '日本語',
       default: 'Default'
     }
   },
-  ja: {
-    source: { label: '言語切替:' },
+  jp: {
+    source: {
+      label: '言語',
+      hint: 'この作品には複数の言語版があります'
+    },
     orientation: {
       title: 'より良い視聴体験',
       subtitle: 'デバイスを横向きに回転してください'
@@ -114,6 +124,7 @@ const languageTexts = {
       'zh-TW': '繁体中文',
       en: 'English',
       'en-US': 'English',
+      jp: '日本語',
       ja: '日本語',
       'ja-JP': '日本語',
       default: 'デフォルト'
@@ -123,11 +134,23 @@ const languageTexts = {
 
 const currentLanguage = computed(() => {
   const lang = locale.value.split('-')[0]
-  return (languageTexts as any)[lang] || languageTexts.en
+  const normalizedLang = lang === 'zh' ? 'cn' : lang === 'ja' ? 'jp' : lang
+  return languageTexts[normalizedLang as keyof typeof languageTexts] || languageTexts.en
 })
 
 const sourceText = computed(() => currentLanguage.value.source)
 const orientationText = computed(() => currentLanguage.value.orientation)
+
+const languageLabelMap: Record<string, string> = {
+  cn: '中文',
+  zh: '中文',
+  'zh-CN': '中文',
+  jp: '日本語',
+  ja: '日本語',
+  'ja-JP': '日本語',
+  en: 'English',
+  'en-US': 'English'
+}
 
 const coverzip = computed(() => {
   if (props.cover) {
@@ -162,7 +185,7 @@ const sources = computed<VideoSource[]>(() => {
 
 const currentSrc = computed(() => {
   const found = sources.value.find(item => item.label === currentLabel.value)
-  return found ? found.src : sources.value[0].src
+  return found ? found.src : sources.value[0]?.src || ''
 })
 
 // 检测移动设备
@@ -172,7 +195,9 @@ function detectMobile(): boolean {
 
 // 获取语言文本
 function getLanguageText(label: string): string {
-  return currentLanguage.value.languages[label] || label
+  if (languageLabelMap[label]) return languageLabelMap[label]
+  const languages = currentLanguage.value.languages as Record<string, string>
+  return languages[label] || label
 }
 
 // 检查屏幕方向
@@ -185,6 +210,10 @@ function checkOrientation() {
   } else {
     showOrientationTip.value = false
   }
+}
+
+function handleOrientationChange() {
+  setTimeout(checkOrientation, 500)
 }
 
 // 隐藏横屏提示
@@ -215,170 +244,188 @@ function unlockOrientation() {
   showOrientationTip.value = false
 }
 
+function createVideoElement() {
+  const video = document.createElement('video')
+  video.poster = coverzip.value || ''
+  video.playsInline = true
+  video.crossOrigin = 'anonymous'
+  video.setAttribute('playsinline', '')
+
+  if (currentSrc.value) {
+    const source = document.createElement('source')
+    source.src = currentSrc.value
+    source.type = 'video/mp4'
+    video.appendChild(source)
+  }
+
+  playerContainer.value?.replaceChildren(video)
+  return video
+}
+
+function updatePlayerSource(currentTime = 0, wasPlaying = false, volume = player?.volume ?? 0.6) {
+  if (!player || !currentSrc.value) return
+
+  player.poster = coverzip.value || ''
+  player.source = {
+    type: 'video',
+    sources: [
+      {
+        src: currentSrc.value,
+        type: 'video/mp4'
+      }
+    ]
+  }
+
+  player.once('loadedmetadata', () => {
+    if (currentTime > 0 && currentTime < player.duration) {
+      player.currentTime = currentTime
+    }
+    player.volume = volume
+
+    if (wasPlaying) {
+      player.play().catch(console.error)
+    }
+  })
+}
+
+function bindPlayerEvents() {
+  player.on('ready', () => {
+    console.log('Plyr is ready')
+  })
+
+  player.on('play', () => {
+    isVideoPlaying.value = true
+    emit('onPlay')
+  })
+
+  player.on('pause', () => {
+    isVideoPlaying.value = false
+    emit('onPause')
+  })
+
+  player.on('ended', () => {
+    isVideoPlaying.value = false
+    emit('onPause')
+  })
+
+  player.on('error', (event: any) => {
+    console.error('Plyr error:', event)
+    emit('onAbort')
+  })
+
+  player.on('enterfullscreen', () => {
+    if (isMobile.value) {
+      tryLockOrientation()
+    }
+  })
+
+  player.on('exitfullscreen', () => {
+    if (isMobile.value) {
+      unlockOrientation()
+    }
+  })
+}
+
+async function initPlayer() {
+  if (player || isInitializing || !playerContainer.value || !currentSrc.value) return
+  isInitializing = true
+
+  const { default: Plyr } = (await import('plyr' as string)) as { default: any }
+  if (isUnmounted || !playerContainer.value) {
+    isInitializing = false
+    return
+  }
+
+  const video = createVideoElement()
+  const mobileControls = [
+    'play-large',
+    'play',
+    'progress',
+    'current-time',
+    'duration',
+    'mute',
+    'settings',
+    'fullscreen'
+  ]
+  const desktopControls = [
+    'play-large',
+    'restart',
+    'rewind',
+    'play',
+    'fast-forward',
+    'progress',
+    'current-time',
+    'duration',
+    'mute',
+    'volume',
+    'captions',
+    'settings',
+    'pip',
+    'airplay',
+    'fullscreen'
+  ]
+
+  player = new Plyr(video, {
+    controls: isMobile.value ? mobileControls : desktopControls,
+    settings: ['quality', 'speed'],
+    speed: {
+      selected: 1,
+      options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
+    },
+    volume: 0.6,
+    loop: { active: false },
+    keyboard: { focused: true, global: false },
+    tooltips: { controls: true, seek: true },
+    fullscreen: {
+      enabled: true,
+      fallback: true,
+      iosNative: isMobile.value
+    },
+    iconUrl: 'https://cdn.plyr.io/3.7.8/plyr.svg',
+    quality: {
+      default: 720,
+      options: [4320, 2880, 2160, 1440, 1080, 720, 576, 480, 360, 240]
+    }
+  })
+
+  bindPlayerEvents()
+  isInitializing = false
+}
+
 // 切换视频源
 async function switchSource(label: string) {
   if (currentLabel.value === label) return
   currentLabel.value = label
-  if (player) {
-    const currentTime = player.currentTime
-    const wasPlaying = !player.paused
-    const volume = player.volume
-    // 显示加载状态
-    player.poster = coverzip.value || ''
-
-    try {
-      player.source = {
-        type: 'video',
-        sources: [
-          {
-            src: currentSrc.value,
-            type: 'video/mp4'
-          }
-        ]
-      }
-
-      // 恢复播放状态
-      await nextTick()
-
-      player.once('loadedmetadata', () => {
-        if (currentTime > 0 && currentTime < player.duration) {
-          player.currentTime = currentTime
-        }
-        player.volume = volume
-
-        if (wasPlaying) {
-          player.play().catch(console.error)
-        }
-      })
-    } catch (error) {
-      console.error('Error switching source:', error)
-      emit('onAbort')
-    }
+  if (!player) {
+    await initPlayer()
+    return
   }
+
+  const currentTime = player.currentTime
+  const wasPlaying = !player.paused
+  const volume = player.volume
+
+  try {
+    updatePlayerSource(currentTime, wasPlaying, volume)
+  } catch (error) {
+    console.error('Error switching source:', error)
+    emit('onAbort')
+  }
+  return
 }
 
 onMounted(async () => {
   isMobile.value = detectMobile()
-  // 动态导入 Plyr
-  const { default: Plyr } = await import('plyr')
-  if (videoElement.value) {
-    // 移动端控制栏配置
-    const mobileControls = [
-      'play-large',
-      'play',
-      'progress',
-      'current-time',
-      'duration',
-      'mute',
-      'volume',
-      'settings',
-      'fullscreen'
-    ]
-
-    // 桌面端控制栏配置
-    const desktopControls = [
-      'play-large',
-      'restart',
-      'rewind',
-      'play',
-      'fast-forward',
-      'progress',
-      'current-time',
-      'duration',
-      'mute',
-      'volume',
-      'captions',
-      'settings',
-      'pip',
-      'airplay',
-      'fullscreen'
-    ]
-
-    player = new Plyr(videoElement.value, {
-      // 根据设备类型选择控制栏
-      controls: isMobile.value ? mobileControls : desktopControls,
-
-      // 设置菜单
-      settings: ['quality', 'speed'],
-
-      // 播放速度选项
-      speed: {
-        selected: 1,
-        options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
-      },
-
-      // 音量设置
-      volume: 0.6,
-
-      // 其他配置
-      loop: { active: false },
-      keyboard: { focused: true, global: false },
-      tooltips: { controls: true, seek: true },
-      fullscreen: {
-        enabled: true,
-        fallback: true,
-        iosNative: isMobile.value
-      },
-
-      // 自定义图标
-      iconUrl: 'https://cdn.plyr.io/3.7.8/plyr.svg',
-
-      // 质量选择器
-      quality: {
-        default: 720,
-        options: [4320, 2880, 2160, 1440, 1080, 720, 576, 480, 360, 240]
-      }
-    })
-
-    // 事件监听
-    player.on('ready', () => {
-      console.log('Plyr is ready')
-    })
-
-    player.on('play', () => {
-      isVideoPlaying.value = true
-      emit('onPlay')
-    })
-
-    player.on('pause', () => {
-      isVideoPlaying.value = false
-      emit('onPause')
-    })
-
-    player.on('ended', () => {
-      isVideoPlaying.value = false
-      emit('onPause')
-    })
-
-    player.on('error', (event: any) => {
-      console.error('Plyr error:', event)
-      emit('onAbort')
-    })
-
-    // 全屏事件监听
-    player.on('enterfullscreen', () => {
-      if (isMobile.value) {
-        tryLockOrientation()
-      }
-    })
-
-    player.on('exitfullscreen', () => {
-      if (isMobile.value) {
-        unlockOrientation()
-      }
-    })
-
-    // 监听屏幕方向变化
-    if (isMobile.value) {
-      window.addEventListener('orientationchange', () => {
-        setTimeout(checkOrientation, 500)
-      })
-      window.addEventListener('resize', checkOrientation)
-    }
+  await nextTick()
+  await initPlayer()
+  if (isMobile.value) {
+    window.addEventListener('orientationchange', handleOrientationChange)
+    window.addEventListener('resize', checkOrientation)
   }
 })
 
 onBeforeUnmount(() => {
+  isUnmounted = true
   // Hide player container before destroy to prevent poster flash during transition
   if (playerContainer.value) {
     playerContainer.value.style.opacity = '0'
@@ -388,6 +435,7 @@ onBeforeUnmount(() => {
     player = null
   }
   if (isMobile.value) {
+    window.removeEventListener('orientationchange', handleOrientationChange)
     window.removeEventListener('orientationchange', checkOrientation)
     window.removeEventListener('resize', checkOrientation)
   }
@@ -397,7 +445,18 @@ onBeforeUnmount(() => {
 watch(locale, newLocale => {
   const hasMatchingSource = sources.value.some(source => source.label === newLocale)
   if (hasMatchingSource) {
-    currentLabel.value = newLocale
+    switchSource(newLocale)
+  }
+})
+
+watch(currentSrc, async (src, oldSrc) => {
+  if (!src) return
+  if (!player) {
+    await initPlayer()
+    return
+  }
+  if (oldSrc && src !== oldSrc) {
+    updatePlayerSource()
   }
 })
 
@@ -416,18 +475,24 @@ defineExpose({
 .plyr-wrapper {
   width: 100%;
   height: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 8px;
   position: relative;
 }
 
 .plyr-container {
   width: 100%;
   height: 100%;
+  min-height: 0;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+
+  video {
+    width: 100%;
+    height: 100%;
+  }
 
   .plyr {
     width: 100%;
@@ -632,25 +697,25 @@ defineExpose({
     .plyr__progress {
       order: -1;
       width: 100% !important;
-      margin: 0 0 8px 0;
-      height: 6px;
-      transform: translateY(-4px);
+      margin: 0 0 10px 0;
+      height: 18px;
+      transform: translateY(-2px);
       &__input {
         &[type='range'] {
-          height: 6px;
+          height: 18px;
           background: rgba(255, 255, 255, 0.2);
           border-radius: 3px;
           &::-webkit-slider-thumb {
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
             background: #007bff;
             border: 2px solid #fff;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
           }
           &::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
             background: #007bff;
             border: 2px solid #fff;
@@ -680,45 +745,76 @@ defineExpose({
     }
 
     .plyr__volume {
-      .plyr__control[type='range'] {
+      width: auto;
+      min-width: 0;
+
+      input[type='range'],
+      .plyr__volume__input {
         display: none;
       }
     }
   }
 }
 
-// 语言切换器样式
 .source-selector {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 2px 4px;
-  max-height: 40px;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 42px;
+  margin: 0 10px 8px;
+  padding: 6px 8px 6px 10px;
   opacity: 1;
   overflow: hidden;
+  border: 1px solid rgba(252, 197, 95, 0.28);
+  border-radius: 14px;
+  background: rgba(8, 5, 1, 0.52);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
   transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.4s ease;
 
-  &.selector-hidden {
-    max-height: 0;
-    opacity: 0;
-    padding: 0;
+  .source-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
   }
 
   .source-label {
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(255, 255, 255, 0.72);
     white-space: nowrap;
     flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  small {
+    color: rgba(255, 255, 255, 0.42);
+    font-size: 10px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .source-actions {
+    display: flex;
+    flex-shrink: 0;
+    gap: 6px;
   }
 
   .source-btn {
-    padding: 4px 14px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    background: rgba(255, 255, 255, 0.06);
+    min-width: 52px;
+    padding: 4px 10px;
+    border: 1px solid rgba(252, 197, 95, 0.22);
+    background: rgba(255, 255, 255, 0.08);
     border-radius: 20px;
     font-size: 12px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.76);
     cursor: pointer;
     transition: all 0.25s ease;
     white-space: nowrap;
@@ -738,6 +834,35 @@ defineExpose({
 
     &:focus {
       outline: none;
+    }
+  }
+}
+
+@media screen and (max-width: 768px), screen and (max-height: 760px) {
+  .plyr-wrapper {
+    gap: 6px;
+  }
+
+  .source-selector {
+    min-height: 38px;
+    margin: 0 8px 6px;
+    padding: 5px 6px 5px 8px;
+    gap: 6px;
+
+    .source-label {
+      padding: 0;
+      overflow: hidden;
+      font-size: 11px;
+    }
+
+    small {
+      max-width: 9rem;
+    }
+
+    .source-btn {
+      min-width: 40px;
+      padding: 3px 8px;
+      font-size: 11px;
     }
   }
 }

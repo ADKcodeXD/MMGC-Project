@@ -1,13 +1,8 @@
 <template>
   <div class="bg-black body" :style="bgStyle">
-    <Suspense>
-      <NuxtLayout>
-        <NuxtPage :activityId="activityId" />
-      </NuxtLayout>
-      <template #fallback>
-        <LoadingPage2 />
-      </template>
-    </Suspense>
+    <NuxtLayout>
+      <NuxtPage :activityId="activityId" />
+    </NuxtLayout>
   </div>
 </template>
 

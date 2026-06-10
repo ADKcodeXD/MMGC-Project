@@ -57,6 +57,44 @@
           <p>{{ $t('polls') }}</p>
         </template>
       </div>
+      <el-popover
+        v-if="movieItem.moviePlaylink"
+        placement="top"
+        :width="posterDataUrl ? 340 : 260"
+        trigger="click"
+        popper-class="share-popper"
+      >
+        <template #reference>
+          <div class="flex items-center operitem flex-col">
+            <Icon name="ri:share-forward-line" class="text-xl" />
+            <p>{{ shareText.title }}</p>
+          </div>
+        </template>
+        <div class="share-popover">
+          <div class="share-popover-title">
+            <Icon name="ri:share-forward-line" size="16" />
+            <span>{{ shareText.title }}</span>
+          </div>
+          <p class="share-link">{{ shareUrl }}</p>
+          <div class="share-actions">
+            <ElButton size="small" @click="copyShareLink">
+              <Icon name="ri:file-copy-line" class="mr-1" />
+              {{ shareText.copy }}
+            </ElButton>
+            <ElButton size="small" type="primary" @click="generatePoster">
+              <Icon name="ri:image-line" class="mr-1" />
+              {{ shareText.poster }}
+            </ElButton>
+          </div>
+          <div class="poster-preview" v-if="posterDataUrl">
+            <img :src="posterDataUrl" :alt="shareText.poster" />
+            <ElButton class="mt-2" size="small" type="warning" @click="downloadPoster">
+              <Icon name="ri:download-2-line" class="mr-1" />
+              {{ shareText.download }}
+            </ElButton>
+          </div>
+        </div>
+      </el-popover>
     </div>
   </div>
 
@@ -88,11 +126,18 @@
 
 <script setup lang="ts">
 import type { MovieVo } from '~~/types/movie.type'
-defineProps<{
+import { useRoute } from 'vue-router'
+import { useGlobalStore } from '~~/stores/global'
+
+const route = useRoute()
+const globalStore = useGlobalStore()
+
+const props = defineProps<{
   movieItem: MovieVo | any
   dayPollLink?: Sns | null
 }>()
 const pollDialogShow = ref(false)
+const posterDataUrl = ref('')
 
 const pollByLink = (movie: MovieVo, dayPollLink?: Sns | null) => {
   if (dayPollLink && (dayPollLink.bilibili || dayPollLink.twitter || dayPollLink.personalWebsite)) {
@@ -104,6 +149,366 @@ const pollByLink = (movie: MovieVo, dayPollLink?: Sns | null) => {
 
 const { locale } = useCurrentLocale()
 const { pollMovie, likeOrUnLike, goToMovieDetailMobile } = useMovieOperate()
+
+const localeText = {
+  cn: {
+    title: '分享作品',
+    copy: '复制链接',
+    poster: '生成海报',
+    download: '下载海报',
+    copied: '链接已复制',
+    posterFailed: '海报生成失败，请复制链接分享',
+    scan: '扫码观看',
+    bannerSuffix: '作品'
+  },
+  en: {
+    title: 'Share',
+    copy: 'Copy Link',
+    poster: 'Generate Poster',
+    download: 'Download',
+    copied: 'Link copied',
+    posterFailed: 'Poster failed. Please share the link instead.',
+    scan: 'Scan to watch',
+    bannerSuffix: 'Work'
+  },
+  jp: {
+    title: '共有',
+    copy: 'リンクをコピー',
+    poster: 'ポスター生成',
+    download: '保存',
+    copied: 'リンクをコピーしました',
+    posterFailed: 'ポスター生成に失敗しました。リンクを共有してください。',
+    scan: 'スキャンして視聴',
+    bannerSuffix: '作品'
+  }
+}
+
+const shareText = computed(() => {
+  const key = locale.value === 'jp' ? 'jp' : locale.value === 'en' ? 'en' : 'cn'
+  return localeText[key]
+})
+
+const movieTitle = computed(() => {
+  return props.movieItem.movieName?.[locale.value] || props.movieItem.movieName?.cn || ''
+})
+
+const movieDesc = computed(() => {
+  return props.movieItem.movieDesc?.[locale.value] || props.movieItem.movieDesc?.cn || ''
+})
+
+const authorName = computed(() => {
+  return props.movieItem.author?.memberName || props.movieItem.authorName || ''
+})
+
+const activityYear = computed(() => {
+  return route.params.activityId?.toString() || props.movieItem.day?.toString() || ''
+})
+
+const shareUrl = computed(() => {
+  if (!process.client) return ''
+  const url = new URL(window.location.href)
+  const day = props.movieItem.day || route.query.day
+  if (day) url.searchParams.set('day', day.toString())
+  url.searchParams.set('movieId', props.movieItem.movieId.toString())
+  return url.toString()
+})
+
+const openLink = (url: string) => {
+  window.open(url, '_blank')
+}
+
+const copyShareLink = async () => {
+  if (!shareUrl.value) return
+  await navigator.clipboard.writeText(shareUrl.value)
+  ElMessage.success(shareText.value.copied)
+}
+
+const loadCanvasImage = async (src: string): Promise<HTMLImageElement | null> => {
+  if (!src) return null
+  const tryLoad = (url: string): Promise<HTMLImageElement | null> =>
+    new Promise(resolve => {
+      const image = new Image()
+      image.crossOrigin = 'anonymous'
+      image.onload = () => resolve(image)
+      image.onerror = () => resolve(null)
+      image.src = url
+    })
+
+  const img = await tryLoad(src)
+  if (img) return img
+
+  const bustUrl = src.includes('?') ? `${src}&_cb=${Date.now()}` : `${src}?_cb=${Date.now()}`
+  return await tryLoad(bustUrl)
+}
+
+const drawCover = (
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement | null,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) => {
+  ctx.save()
+  ctx.beginPath()
+  ctx.roundRect(x, y, width, height, 28)
+  ctx.clip()
+  if (image) {
+    const scale = Math.max(width / image.width, height / image.height)
+    const drawWidth = image.width * scale
+    const drawHeight = image.height * scale
+    ctx.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight)
+  } else {
+    const fallback = ctx.createLinearGradient(x, y, x + width, y + height)
+    fallback.addColorStop(0, '#2d1b03')
+    fallback.addColorStop(0.45, '#8d6422')
+    fallback.addColorStop(1, '#080502')
+    ctx.fillStyle = fallback
+    ctx.fillRect(x, y, width, height)
+  }
+  ctx.restore()
+}
+
+const wrapText = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number,
+  maxLines: number
+) => {
+  let line = ''
+  let lines = 0
+  const characters = text.split('')
+  for (let i = 0; i < characters.length; i += 1) {
+    const testLine = line + characters[i]
+    if (ctx.measureText(testLine).width > maxWidth && line) {
+      ctx.fillText(lines === maxLines - 1 ? `${line.slice(0, Math.max(0, line.length - 1))}...` : line, x, y)
+      y += lineHeight
+      lines += 1
+      line = characters[i]
+      if (lines >= maxLines) return y
+    } else {
+      line = testLine
+    }
+  }
+  if (line && lines < maxLines) ctx.fillText(line, x, y)
+  return y + lineHeight
+}
+
+const generatePoster = async () => {
+  if (!process.client) return
+  const canvas = document.createElement('canvas')
+  canvas.width = 900
+  canvas.height = 1400
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+
+  const cover = await loadCanvasImage(props.movieItem.movieCover)
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=8&data=${encodeURIComponent(shareUrl.value)}`
+  const qr = await loadCanvasImage(qrUrl)
+  const logoUrl = props.movieItem.activityVo?.activityLogo || globalStore.currentActivityData?.activityLogo
+  const logoImg = logoUrl ? await loadCanvasImage(logoUrl) : null
+
+  // ── Background ──
+  const bg = ctx.createLinearGradient(0, 0, 0, 1400)
+  bg.addColorStop(0, '#050300')
+  bg.addColorStop(0.42, '#211302')
+  bg.addColorStop(1, '#000000')
+  ctx.fillStyle = bg
+  ctx.fillRect(0, 0, 900, 1400)
+
+  // ── Outer borders ──
+  ctx.strokeStyle = '#f4c560'
+  ctx.lineWidth = 5
+  ctx.strokeRect(34, 34, 832, 1332)
+  ctx.strokeStyle = 'rgba(244, 197, 96, 0.35)'
+  ctx.lineWidth = 1
+  ctx.strokeRect(54, 54, 792, 1292)
+
+  // ── Cover image ──
+  drawCover(ctx, cover, 80, 90, 740, 420)
+
+  // ── Gold shine divider ──
+  const shine = ctx.createLinearGradient(80, 0, 820, 0)
+  shine.addColorStop(0, '#80520c')
+  shine.addColorStop(0.5, '#fff1a8')
+  shine.addColorStop(1, '#80520c')
+  ctx.fillStyle = shine
+  ctx.fillRect(80, 542, 740, 4)
+
+  // ── Movie title ──
+  ctx.fillStyle = '#f5c65f'
+  ctx.font = 'bold 46px sans-serif'
+  wrapText(ctx, movieTitle.value, 80, 610, 740, 58, 2)
+
+  // ── Description ──
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.76)'
+  ctx.font = '26px sans-serif'
+  wrapText(ctx, movieDesc.value, 80, 718, 740, 36, 3)
+
+  // ── Author name ── "Author · name" inline
+  ctx.font = '18px sans-serif'
+  ctx.fillStyle = 'rgba(244, 197, 96, 0.65)'
+  const authorPrefix = 'Author · '
+  ctx.fillText(authorPrefix, 80, 848)
+  const prefixW = ctx.measureText(authorPrefix).width
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.92)'
+  ctx.font = 'bold 26px sans-serif'
+  ctx.fillText(authorName.value, 80 + prefixW, 848)
+
+  // ── Award Banner ──
+  const rbY = 882
+  const rbH = 118
+  const rbMid = rbY + rbH / 2
+
+  // Dark background fill
+  ctx.fillStyle = 'rgba(8, 5, 1, 0.88)'
+  ctx.fillRect(80, rbY, 740, rbH)
+
+  // Top gold line
+  const lineGradTop = ctx.createLinearGradient(80, rbY, 820, rbY)
+  lineGradTop.addColorStop(0, 'rgba(244, 197, 96, 0)')
+  lineGradTop.addColorStop(0.2, '#f4c560')
+  lineGradTop.addColorStop(0.8, '#f4c560')
+  lineGradTop.addColorStop(1, 'rgba(244, 197, 96, 0)')
+  ctx.fillStyle = lineGradTop
+  ctx.fillRect(80, rbY, 740, 2)
+
+  // Bottom gold line
+  const lineGradBot = ctx.createLinearGradient(80, rbY + rbH - 2, 820, rbY + rbH - 2)
+  lineGradBot.addColorStop(0, 'rgba(244, 197, 96, 0)')
+  lineGradBot.addColorStop(0.2, '#f4c560')
+  lineGradBot.addColorStop(0.8, '#f4c560')
+  lineGradBot.addColorStop(1, 'rgba(244, 197, 96, 0)')
+  ctx.fillStyle = lineGradBot
+  ctx.fillRect(80, rbY + rbH - 2, 740, 2)
+
+  // "MMGC YYYY" — large gradient text
+  const titleTextGrad = ctx.createLinearGradient(200, rbY, 700, rbY + rbH)
+  titleTextGrad.addColorStop(0, '#fff1a8')
+  titleTextGrad.addColorStop(0.5, '#f4c560')
+  titleTextGrad.addColorStop(1, '#c8851a')
+  ctx.fillStyle = titleTextGrad
+  ctx.font = 'bold 48px sans-serif'
+  const titleText = `MMGC ${activityYear.value}`
+  
+  const subtitleText = `Day ${props.movieItem.day || route.query.day || ''} · ${shareText.value.bannerSuffix}`
+
+  // Measure text widths to align them
+  const titleW = ctx.measureText(titleText).width
+  ctx.font = '400 22px sans-serif'
+  ;(ctx as any).letterSpacing = '2px'
+  const subtitleW = ctx.measureText(subtitleText).width
+  ;(ctx as any).letterSpacing = '0px'
+
+  const textBlockW = Math.max(titleW, subtitleW)
+  let textBlockCenterX = 450
+
+  if (logoImg) {
+    // 增大 Logo 高度
+    const logoH = 96
+    const logoW = logoImg.width * (logoH / logoImg.height)
+    const gap = 12
+    const totalW = logoW + gap + textBlockW
+    const startX = 450 - totalW / 2
+    
+    // Logo 垂直居中于 rbY 到 rbY + rbH
+    const logoY = rbY + (rbH - logoH) / 2
+    ctx.drawImage(logoImg, startX, logoY, logoW, logoH)
+    textBlockCenterX = startX + logoW + gap + textBlockW / 2
+  }
+
+  // Draw Title Text
+  ctx.textAlign = 'center'
+  ctx.fillStyle = titleTextGrad
+  ctx.font = 'bold 48px sans-serif'
+  ctx.fillText(titleText, textBlockCenterX, rbY + 52)
+
+  // Draw Subtitle Text (Day X · 作品)
+  ctx.fillStyle = 'rgba(244, 220, 150, 0.75)'
+  ctx.font = '400 22px sans-serif'
+  ;(ctx as any).letterSpacing = '2px'
+  ctx.fillText(subtitleText, textBlockCenterX, rbY + 84)
+  ;(ctx as any).letterSpacing = '0px'
+  ctx.textAlign = 'left'
+
+  // ── Scan / QR Panel (fully inside poster border) ──
+  const scanY = 1022
+  const scanH = 268
+
+  const panelGrad = ctx.createLinearGradient(80, scanY, 80, scanY + scanH)
+  panelGrad.addColorStop(0, 'rgba(22, 13, 2, 0.9)')
+  panelGrad.addColorStop(1, 'rgba(5, 3, 1, 0.97)')
+  ctx.fillStyle = panelGrad
+  ctx.beginPath()
+  ctx.roundRect(80, scanY, 740, scanH, 18)
+  ctx.fill()
+  ctx.strokeStyle = 'rgba(244, 197, 96, 0.4)'
+  ctx.lineWidth = 1.5
+  ctx.stroke()
+
+  // QR frame — right side of panel, themed dark with gold border
+  const qrSize = 170
+  const qrPad = 10
+  const qrFrameSize = qrSize + qrPad * 2
+  const qrFrameX = 820 - qrFrameSize - 16
+  const qrFrameY = scanY + Math.round((scanH - qrFrameSize) / 2)
+
+  ctx.fillStyle = '#0c0700'
+  ctx.beginPath()
+  ctx.roundRect(qrFrameX, qrFrameY, qrFrameSize, qrFrameSize, 10)
+  ctx.fill()
+  ctx.strokeStyle = '#f4c560'
+  ctx.lineWidth = 2
+  ctx.stroke()
+  ctx.strokeStyle = 'rgba(244, 197, 96, 0.22)'
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.roundRect(qrFrameX + 5, qrFrameY + 5, qrFrameSize - 10, qrFrameSize - 10, 7)
+  ctx.stroke()
+
+  if (qr) {
+    ctx.drawImage(qr, qrFrameX + qrPad, qrFrameY + qrPad, qrSize, qrSize)
+  } else {
+    ctx.fillStyle = 'rgba(244, 197, 96, 0.65)'
+    ctx.font = '13px sans-serif'
+    wrapText(ctx, shareUrl.value, qrFrameX + qrPad + 4, qrFrameY + qrPad + 18, qrSize - 8, 20, 7)
+  }
+
+  // "扫码观看" label (left side)
+  ctx.fillStyle = '#f5c65f'
+  ctx.font = 'bold 26px sans-serif'
+  ctx.fillText(shareText.value.scan, 108, scanY + 52)
+
+  // Decorative fade line under label
+  const fadeGrad = ctx.createLinearGradient(108, 0, 300, 0)
+  fadeGrad.addColorStop(0, 'rgba(244, 197, 96, 0.55)')
+  fadeGrad.addColorStop(1, 'rgba(244, 197, 96, 0)')
+  ctx.fillStyle = fadeGrad
+  ctx.fillRect(108, scanY + 62, 180, 1)
+
+  // URL text
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'
+  ctx.font = '17px sans-serif'
+  wrapText(ctx, shareUrl.value, 108, scanY + 92, qrFrameX - 128, 25, 6)
+
+  try {
+    posterDataUrl.value = canvas.toDataURL('image/png')
+  } catch (error) {
+    console.error('Poster toDataURL failed (tainted canvas):', error)
+    ElMessage.error(shareText.value.posterFailed)
+  }
+}
+
+const downloadPoster = () => {
+  if (!posterDataUrl.value) return
+  const link = document.createElement('a')
+  link.href = posterDataUrl.value
+  link.download = `MMGC-${activityYear.value}-Day-${props.movieItem.day || route.query.day || ''}-${props.movieItem.movieId}.png`
+  link.click()
+}
 </script>
 
 <style lang="scss" scoped>
@@ -121,5 +526,68 @@ const { pollMovie, likeOrUnLike, goToMovieDetailMobile } = useMovieOperate()
 
 .title {
   @include showLine(2);
+}
+</style>
+
+<style lang="scss">
+.share-popover {
+  color: #f7edd2;
+
+  .share-popover-title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #f5c65f;
+    font-weight: 700;
+    margin-bottom: 0.55rem;
+  }
+
+  .share-link {
+    max-height: 3.4rem;
+    padding: 0.5rem;
+    overflow: hidden;
+    color: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(245, 198, 95, 0.2);
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.45);
+    font-size: 12px;
+    line-height: 1.35;
+    word-break: break-all;
+  }
+
+  .share-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.65rem;
+  }
+
+  .poster-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 0.75rem;
+
+    img {
+      width: min(240px, 100%);
+      max-height: 360px;
+      object-fit: contain;
+      border: 1px solid rgba(245, 198, 95, 0.45);
+      border-radius: 8px;
+      background: #050300;
+    }
+  }
+}
+
+.share-popper.el-popper {
+  border: 1px solid rgba(245, 198, 95, 0.34) !important;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+    rgba(11, 7, 1, 0.96) !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45) !important;
+
+  .el-popper__arrow::before {
+    border-color: rgba(245, 198, 95, 0.34) !important;
+    background: rgba(11, 7, 1, 0.96) !important;
+  }
 }
 </style>

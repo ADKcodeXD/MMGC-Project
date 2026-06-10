@@ -288,12 +288,16 @@ const pollByLink = (movie: MovieVo, dayPollLink?: Sns | null) => {
   }
 }
 
-watchEffect(() => {
-  getMovieDetail(movieId.value).then(async () => {
-    await getVideoByDay()
-    unloading()
-  })
-})
+watch(
+  movieId,
+  id => {
+    getMovieDetail(id).then(async () => {
+      await getVideoByDay()
+      unloading()
+    })
+  },
+  { immediate: true }
+)
 
 watchEffect(() => {
   getComment(pageParam)

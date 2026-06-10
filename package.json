@@ -4,14 +4,19 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
+    "dev:online": "turbo dev:online --filter=mirai-offcial-website",
     "lint": "turbo lint",
     "start": "turbo start"
   },
   "devDependencies": {
     "@nuxtjs/sitemap": "^7.6.0",
-    "turbo": "latest"
+    "turbo": "2.8.16"
   },
   "pnpm": {
+    "overrides": {
+      "bin-wrapper": "npm:bin-wrapper-china",
+      "gifsicle": "5.2.0"
+    },
     "peerDependencyRules": {
       "ignoreMissing": [
         "webpack"

@@ -87,7 +87,7 @@ const activityIds = computed(() => {
   return []
 })
 
-const selectedActivityId = ref(globalState.config?.currentActivityId || 0)
+const selectedActivityId = ref(0)
 const activityData = ref<any>(null)
 const isLoading = ref(false)
 
@@ -99,6 +99,7 @@ const parallaxX = ref(0)
 const parallaxY = ref(0)
 
 const loadActivity = async (id: number) => {
+  if (!id) return
   isLoading.value = true
   videoReady.value = false
   try {
@@ -128,14 +129,23 @@ const loadActivity = async (id: number) => {
   }
 }
 
-loadActivity(selectedActivityId.value)
-
 watch(
   activityIds,
   ids => {
     if (ids.length && !selectedActivityId.value) {
       selectedActivityId.value = ids[0]
       loadActivity(ids[0])
+    }
+  },
+  { immediate: true }
+)
+
+watch(
+  () => globalState.config?.currentActivityId,
+  id => {
+    if (id && !selectedActivityId.value) {
+      selectedActivityId.value = id
+      loadActivity(id)
     }
   },
   { immediate: true }

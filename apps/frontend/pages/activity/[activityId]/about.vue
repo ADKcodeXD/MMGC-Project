@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full flex items-center justify-center">
-    <Transition mode="out-in">
-      <div class="about-page" ref="scrollContainer" v-if="activityData && !isLoading">
+    <template v-if="isClientReady && activityData && !isLoading">
+      <div class="about-page" ref="scrollContainer">
         <!-- desc 介绍 -->
         <section ref="sectionDesc" class="about-section first-section">
           <div class="desc-like">
@@ -119,10 +119,10 @@
           </div>
         </section>
       </div>
-      <MyCustomLoading v-else />
-    </Transition>
+    </template>
+    <MyCustomLoading v-else />
     <!-- 侧边导航 -->
-    <nav class="about-nav" v-if="activityData && !isLoading">
+    <nav class="about-nav" v-if="isClientReady && activityData && !isLoading">
       <div class="about-nav-track">
         <div
           v-for="(item, index) in navItems"
@@ -140,13 +140,16 @@
 </template>
 
 <script setup lang="ts">
-import type { ActivityVo } from '~~/types/activity.type'
 import { useGlobalStore } from '~~/stores/global'
 
-const attrs: { activityId: number } = useAttrs() as any
+const props = defineProps<{
+  activityId: number
+}>()
 const { locale } = useCurrentLocale()
-const { activityData, isLoading } = useActivityDetail(attrs.activityId)
+const activityId = computed(() => props.activityId)
+const { activityData, isLoading } = useActivityDetail(activityId)
 const { unloading } = useGlobalStore()
+const isClientReady = ref(false)
 
 const scrollContainer = ref<HTMLElement>()
 const sectionDesc = ref<HTMLElement>()
@@ -238,6 +241,7 @@ watch(
 )
 
 onMounted(() => {
+  isClientReady.value = true
   nextTick(setupObserver)
 })
 

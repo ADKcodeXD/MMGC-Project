@@ -300,6 +300,7 @@
         <nav class="mobile-nav-list">
           <a
             class="mobile-nav-item"
+            :href="sectionHref('about')"
             :class="{ active: isCurrent(`/mobile/activity/${currentActivityId}/about`) }"
             @click.prevent="goSection('about')"
           >
@@ -308,6 +309,7 @@
           </a>
           <a
             class="mobile-nav-item"
+            :href="sectionHref('main')"
             :class="{ active: isCurrent(`/mobile/activity/${currentActivityId}/main`) }"
             @click.prevent="goSection('main')"
           >
@@ -316,6 +318,7 @@
           </a>
           <a
             class="mobile-nav-item"
+            :href="sectionHref('support')"
             :class="{ active: isCurrent(`/mobile/activity/${currentActivityId}/support`) }"
             @click.prevent="goSection('support')"
           >
@@ -324,6 +327,7 @@
           </a>
           <a
             class="mobile-nav-item"
+            :href="sectionHref('history')"
             :class="{ active: isCurrent(`/mobile/activity/${currentActivityId}/history`) }"
             @click.prevent="goSection('history')"
           >
@@ -332,6 +336,7 @@
           </a>
           <a
             class="mobile-nav-item"
+            :href="sectionHref('statistics')"
             :class="{ active: isCurrent(`/mobile/activity/${currentActivityId}/statistics`) }"
             @click.prevent="goSection('statistics')"
           >
@@ -424,19 +429,29 @@ const pollByLink = (movie: MovieVo, dayPollLink?: Sns | null) => {
 
 const localeRoute = useLocaleRoute()
 
-watchEffect(() => {
-  getMovieDetail(movieId.value).then(async () => {
-    await getVideoByDay()
-    await getComment(pageParam)
-    unloading()
-  })
-})
+watch(
+  movieId,
+  id => {
+    getMovieDetail(id).then(async () => {
+      await getVideoByDay()
+      await getComment(pageParam)
+      unloading()
+    })
+  },
+  { immediate: true }
+)
 
 const goSection = (key: string) => {
   if (!currentActivityId.value) return
   mobileMenuOpen.value = false
-  const route = localeRoute(`/mobile/activity/${currentActivityId.value}/${key}`)
-  navigateTo(route?.fullPath || '/')
+  navigateTo(sectionHref(key))
+}
+
+const sectionHref = (key: string) => {
+  const activityId = currentActivityId.value
+  if (!activityId) return '/'
+  const route = localeRoute(`/mobile/activity/${activityId}/${key}`)
+  return route?.fullPath || `/mobile/activity/${activityId}/${key}`
 }
 
 const isCurrent = (path: string) => {

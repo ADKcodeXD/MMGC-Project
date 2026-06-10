@@ -24,8 +24,8 @@
         </div>
         <div class="left-time">
           <p>
-            {{ $dayjs(activity.startTime).format('YYYY-MM-DD') }} -
-            {{ $dayjs(activity.endTime).format('YYYY-MM-DD') }}
+            {{ dayjs(activity.startTime).format('YYYY-MM-DD') }} -
+            {{ dayjs(activity.endTime).format('YYYY-MM-DD') }}
           </p>
           <div class="ongoing">
             <p v-if="isOngoing(activity.startTime, activity.endTime)" class="flex items-center">

@@ -23,6 +23,10 @@ export const useActivityMain = () => {
     return parseInt((route?.query.day && route?.query.day?.toString()) || '') || -1
   })
 
+  const queryMovieId = computed(() => {
+    return parseInt((route?.query.movieId && route?.query.movieId?.toString()) || '') || -1
+  })
+
   const currentDayItem = computed(() => {
     return days.value?.find(item => item.day === currentDay.value) || null
   })
@@ -35,14 +39,27 @@ export const useActivityMain = () => {
   })
 
   const updateQueryParam = (param: string, newValue: any) => {
+    if (!process.client) return
     const url = new URL(window.location.href)
     url.searchParams.set(param, newValue) // 设置新的参数值
     window.history.pushState({}, '', url)
   }
 
+  const updateMovieQuery = (movieId?: number | null) => {
+    if (!process.client) return
+    const url = new URL(window.location.href)
+    if (movieId) {
+      url.searchParams.set('movieId', movieId.toString())
+    } else {
+      url.searchParams.delete('movieId')
+    }
+    window.history.replaceState({}, '', url)
+  }
+
   const handleSwitchDay = (day: number) => {
     currentDay.value = day
     updateQueryParam('day', currentDay.value)
+    updateMovieQuery(null)
   }
 
   const nextDay = () => {
@@ -56,6 +73,7 @@ export const useActivityMain = () => {
       }
 
       updateQueryParam('day', currentDay.value)
+      updateMovieQuery(null)
     }
   }
 
@@ -68,6 +86,8 @@ export const useActivityMain = () => {
       } else {
         currentDay.value = days.value[targetIndex - 1].day as any
       }
+      updateQueryParam('day', currentDay.value)
+      updateMovieQuery(null)
     }
   }
 
@@ -97,7 +117,9 @@ export const useActivityMain = () => {
     isLoading.value = true
     const { data } = await getMovieByActivityId(activityId, day)
     movies.value = data?.result.sort((a, b) => (a.sortIndex || 0) - (b.sortIndex || 0)) || []
-    activeVideo.value = (movies.value && movies.value[0]) || null
+    const targetMovie = movies.value.find(movie => movie.movieId === queryMovieId.value)
+    activeVideo.value = targetMovie || (movies.value && movies.value[0]) || null
+    if (activeVideo.value?.movieId) updateMovieQuery(activeVideo.value.movieId)
     players.value = []
     isLoading.value = false
   }
@@ -114,6 +136,7 @@ export const useActivityMain = () => {
     day,
     currentDayItem,
     coverzip,
+    updateMovieQuery,
     handleSwitchDay,
     nextDay,
     prevDay,

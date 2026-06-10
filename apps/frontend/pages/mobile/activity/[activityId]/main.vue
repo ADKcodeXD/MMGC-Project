@@ -121,10 +121,20 @@ const {
   locale,
   currentDayItem,
   coverzip,
+  updateMovieQuery,
   handleSwitchDay,
   getDays,
   getVideoByDay
 } = useActivityMain()
+
+watch(activeVideo, async () => {
+  updateMovieQuery(activeVideo.value?.movieId)
+  await nextTick()
+  const activeEl = document.querySelector('.movie-list-card.active')
+  if (activeEl) {
+    activeEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
+  }
+})
 
 // Get activity list for dropdown
 const { activityList: activityListData } = useActivityList()

@@ -22,6 +22,17 @@ export default defineNuxtConfig({
     url: process.env.NUXT_PUBLIC_API_BASE || 'https://mirai-mad.com'
   },
 
+  routeRules: {
+    '/activity/**/about': { ssr: false },
+    '/cn/activity/**/about': { ssr: false },
+    '/en/activity/**/about': { ssr: false },
+    '/jp/activity/**/about': { ssr: false },
+    '/activity/**/main': { ssr: false },
+    '/cn/activity/**/main': { ssr: false },
+    '/en/activity/**/main': { ssr: false },
+    '/jp/activity/**/main': { ssr: false }
+  } as any,
+
   sitemap: {
     sources: [
       '/api/__sitemap__/urls'
@@ -49,8 +60,8 @@ export default defineNuxtConfig({
     plugins: [
       eslintPlugin({
         include: ['src/**/*.js', 'src/**/*.vue', 'src/*.js', 'src/*.vue']
-      }),
-      ElementPlus()
+      }) as any,
+      ElementPlus() as any
     ],
     css: {
       preprocessorOptions: {

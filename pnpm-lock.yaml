@@ -4,6 +4,10 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  bin-wrapper: npm:bin-wrapper-china
+  gifsicle: 5.2.0
+
 importers:
 
   .:
@@ -12,7 +16,7 @@ importers:
         specifier: ^7.6.0
         version: 7.6.0(magicast@0.5.2)(vite@7.3.1(jiti@2.6.1)(less@4.5.1)(sass@1.97.3)(terser@5.46.0)(yaml@2.8.2))(vue@3.5.28(typescript@4.9.5))(zod@3.25.76)
       turbo:
-        specifier: latest
+        specifier: 2.8.16
         version: 2.8.16
 
   apps/MMGCBACK:
@@ -86,9 +90,6 @@ importers:
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.23
-      mockjs:
-        specifier: ^1.1.0
-        version: 1.1.0
       nprogress:
         specifier: ^0.2.0
         version: 0.2.0
@@ -180,9 +181,6 @@ importers:
       '@types/lodash-es':
         specifier: ^4.17.6
         version: 4.17.12
-      '@types/mockjs':
-        specifier: ^1.0.6
-        version: 1.0.10
       '@types/node':
         specifier: ^17.0.25
         version: 17.0.45
@@ -333,9 +331,6 @@ importers:
       vite-plugin-mkcert:
         specifier: ^1.6.0
         version: 1.17.9(vite@3.0.9(less@4.5.1)(sass@1.97.3)(terser@5.46.0))
-      vite-plugin-mock:
-        specifier: ^2.9.6
-        version: 2.9.8(mockjs@1.1.0)(vite@3.0.9(less@4.5.1)(sass@1.97.3)(terser@5.46.0))
       vite-plugin-purge-icons:
         specifier: ^0.8.1
         version: 0.8.2(vite@3.0.9(less@4.5.1)(sass@1.97.3)(terser@5.46.0))
@@ -3096,9 +3091,6 @@ packages:
   '@types/minimist@1.2.5':
     resolution: {integrity: sha512-hov8bUuiLiyFPGyFPE1lwWhmzYbirOXQNNo40+y3zow8aFVTeyn3VWL0VFFfdNddA8S4Vf0Tc062rzyNr7Paag==}
 
-  '@types/mockjs@1.0.10':
-    resolution: {integrity: sha512-SXgrhajHG7boLv6oU93CcmdDm0HYRiceuz6b+7z+/2lCJPTWDv0V5YiwFHT2ejE4bQqgSXQiVPQYPWv7LGsK1g==}
-
   '@types/mousetrap@1.6.15':
     resolution: {integrity: sha512-qL0hyIMNPow317QWW/63RvL1x5MVMV+Ru3NaY9f/CuEpCqrmb7WeuK2071ZY5hczOnm38qExWM2i2WtkXLSqFw==}
 
@@ -4199,13 +4191,17 @@ packages:
     resolution: {integrity: sha512-Mkfm4iE1VFt4xd4vH+gx+0/71esbfus2LsnCGe8Pi4mndSPyT+NGES/Eg99jx8/lUGWfu3z2yuB/bt5UB+iVbQ==}
     engines: {node: '>=6'}
 
-  bin-wrapper@4.1.0:
-    resolution: {integrity: sha512-hfRmo7hWIXPkbpi0ZltboCMVrU+0ClXR/JgbCKKjlDjQf6igXa7OwdqNcFWQZPZTgiY7ZpzE3+LjjkLiTN2T7Q==}
-    engines: {node: '>=6'}
+  bin-wrapper-china@0.1.0:
+    resolution: {integrity: sha512-1UCm17WYEbgry50tup+AQN+JGVEVzoW4f8HMl899k1lvuFxWKGZXl/G2fgxQxAckRjnloO3ijLVVEsv8zescUg==}
+    engines: {node: '>=8.3'}
+    hasBin: true
 
   binary-extensions@2.3.0:
     resolution: {integrity: sha512-Ceh+7ox5qe7LJuLHoY0feh3pHuUDHAcRUeyL2VYghZwfpkNIy/+8Ocg0a3UuSoYzavmylwuLWQOf3hl0jjMMIw==}
     engines: {node: '>=8'}
+
+  binary-mirror-config@1.41.0:
+    resolution: {integrity: sha512-ZiIhR1s6Sv1Fv6qCQqfPjx0Cj86BgFlhqNxZgHkQOWcxJcMbO3mj1iqsuVjowYqJqeZL8e52+IEv7IRnSX6T6w==}
 
   bindings@1.5.0:
     resolution: {integrity: sha512-p2q/t/mhvuOj/UeLlV6566GD/guowlr0hHxClI0W9m7MWYkL1F0hLo+0Aexs9HSPCtR1SXQ0TD3MMKrXZajbiQ==}
@@ -4644,10 +4640,6 @@ packages:
   connect-history-api-fallback@1.6.0:
     resolution: {integrity: sha512-e54B99q/OUoH64zYYRf3HBP5z24G38h5D3qXu23JGRoigpX5Ss4r9ZnDk3g0Z8uQC2x2lPaJ+UlWBc1ZWBWdLg==}
     engines: {node: '>=0.8'}
-
-  connect@3.7.0:
-    resolution: {integrity: sha512-ZqRXc+tZukToSNmh5C2iWMSoV3X1YUcPbqEM4DkEG5tNQXrQUZCNVGGv3IuicnkMtPfGf3Xtp8WCXs295iQ1pQ==}
-    engines: {node: '>= 0.10.0'}
 
   consola@2.15.3:
     resolution: {integrity: sha512-9vAdYbHj6x2fLKC4+oPH0kFzY/orMZyG2Aj+kNylHxKGJ/Ed4dpNyAQYwJOdqO4zdM7XpVHmyejQDcQHrnuXbw==}
@@ -6092,10 +6084,6 @@ packages:
     resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
     engines: {node: '>=8'}
 
-  finalhandler@1.1.2:
-    resolution: {integrity: sha512-aAWcW57uxVNrQZqFXjITpW3sIUQmHGG3qSb9mUah9MgMC4NeWhNOlNjXEYq3HjRAvL6arUviZGGJsBg6z0zsWA==}
-    engines: {node: '>= 0.8'}
-
   find-up@1.1.2:
     resolution: {integrity: sha512-jvElSjyuo4EMQGoTwo1uJU5pQMwTW5lS1x05zzfJuTIyLR3zwO27LYrxNg+dlvKpGOuGy/MzBdXh80g0ve5+HA==}
     engines: {node: '>=0.10.0'}
@@ -6715,10 +6703,6 @@ packages:
 
   import-fresh@3.3.1:
     resolution: {integrity: sha512-TR3KfrTZTYLPB6jUjfx6MF9WcWrHL9su5TObK4ZkYgBdWKPOFoSoQIdEuTuR82pmtxH2spWG9h6etwfr1pLBqQ==}
-    engines: {node: '>=6'}
-
-  import-lazy@3.1.0:
-    resolution: {integrity: sha512-8/gvXvX2JMn0F+CDlSC4l6kOmVaLOO3XLkksI7CI3Ud95KDYJuYur2b9P/PUt/i/pDAMd/DulQsNbbbmRRsDIQ==}
     engines: {node: '>=6'}
 
   import-lazy@4.0.0:
@@ -7454,6 +7438,7 @@ packages:
   keygrip@1.1.0:
     resolution: {integrity: sha512-iYSchDJ+liQ8iwbSI2QqsQOvqv58eJCEanyJPJi+Khyu8smkcKSFUCbPwzFcL7YVtZ6eONjqRX/38caJ7QjRAQ==}
     engines: {node: '>= 0.6'}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
 
   keyv@3.0.0:
     resolution: {integrity: sha512-eguHnq22OE3uVoSYG0LVWNP+4ppamWr9+zWBe1bsNcovIMy6huUJFPgy4mGwCd/rnl3vOLGW1MTlu4c57CT1xA==}
@@ -8045,10 +8030,6 @@ packages:
   mocked-exports@0.1.1:
     resolution: {integrity: sha512-aF7yRQr/Q0O2/4pIXm6PZ5G+jAd7QS4Yu8m+WEeEHGnbo+7mE36CbLSDQiXYV8bVL3NfmdeqPJct0tUlnjVSnA==}
 
-  mockjs@1.1.0:
-    resolution: {integrity: sha512-eQsKcWzIaZzEZ07NuEyO4Nw65g0hdWAyurVol1IPl1gahRwY+svqzfgfey8U8dahLwG44d6/RwEzuK52rSa/JQ==}
-    hasBin: true
-
   modify-values@1.0.1:
     resolution: {integrity: sha512-xV2bxeN6F7oYjZWTe/YPAy6MN2M+sL4u/Rlm2AHCIVGfo2p1yGmBHQ6vHehl4bRTZBdHu3TSkWdYgkwpYzAGSw==}
     engines: {node: '>=0.10.0'}
@@ -8383,10 +8364,6 @@ packages:
   ohmyfetch@0.4.21:
     resolution: {integrity: sha512-VG7f/JRvqvBOYvL0tHyEIEG7XHWm7OqIfAs6/HqwWwDfjiJ1g0huIpe5sFEmyb+7hpFa1EGNH2aERWR72tlClw==}
     deprecated: Package renamed to https://github.com/unjs/ofetch
-
-  on-finished@2.3.0:
-    resolution: {integrity: sha512-ikqdkGAAyf/X/gPhXGvfgAytDZtDbr+bkNUJ0N9h5MI/dmdgCs3l6hoHrcUv41sRKew3jIwrp4qQDXiK99Utww==}
-    engines: {node: '>= 0.8'}
 
   on-finished@2.4.1:
     resolution: {integrity: sha512-oVlzkg3ENAhCk2zdv7IJwd/QUD4z2RxRwpkcGY8psCVcCYZNq4wYnVWALHM+brtuJjePWiYF/ClmuDr8Ch5+kg==}
@@ -10796,10 +10773,6 @@ packages:
     resolution: {integrity: sha512-PYxZDA+6QtvRvm//++aGdmKG/cI07jNwbROz0Ql+VzFV1+Z0Dy55NI4zZ7RHc9KKpBePNFwoErqIuqQv/cjiTA==}
     engines: {node: '>= 0.12.0'}
 
-  utils-merge@1.0.1:
-    resolution: {integrity: sha512-pMZTvIkT1d+TFGvDOqodOclx0QWkkgi6Tdoa8gC8ffGAAqz9pzPTZWAybbsHHoED/ztMtkv/VoYTYyShUn81hA==}
-    engines: {node: '>= 0.4.0'}
-
   uuid@3.4.0:
     resolution: {integrity: sha512-HjSDRw6gZE5JMggctHBcjVak08+KEVhSIiDzFnT9S9aegmp85S/bReBVTb4QTFaRNptJ9kuYaNhnbNEOkbKb/A==}
     deprecated: Please upgrade  to version 7 or higher.  Older versions may use Math.random() in certain circumstances, which is known to be problematic.  See https://v8.dev/blog/math-random for details.
@@ -10964,13 +10937,6 @@ packages:
     engines: {node: '>=v16.7.0'}
     peerDependencies:
       vite: '>=3'
-
-  vite-plugin-mock@2.9.8:
-    resolution: {integrity: sha512-YTQM5Sn7t+/DNOwTkr+W26QGTCk1PrDkhGHslTJ90lIPJhJtDTwuSkEYMAuLP9TcVQ/qExTFx/x/GE3kxJ05sw==}
-    engines: {node: '>=12.0.0'}
-    peerDependencies:
-      mockjs: '>=1.1.0'
-      vite: '>=2.0.0'
 
   vite-plugin-purge-icons@0.8.2:
     resolution: {integrity: sha512-rW3RcNKj7QY3M7wcnwYVc3Ig+WwSQQ/Z67v+xdtk/8MA+ON05A3zc3qGaPdi6+8BUKYDpqvviKYiuLgRjleUOQ==}
@@ -15029,8 +14995,6 @@ snapshots:
 
   '@types/minimist@1.2.5': {}
 
-  '@types/mockjs@1.0.10': {}
-
   '@types/mousetrap@1.6.15': {}
 
   '@types/node@14.18.63': {}
@@ -16494,16 +16458,19 @@ snapshots:
       execa: 1.0.0
       find-versions: 3.2.0
 
-  bin-wrapper@4.1.0:
+  bin-wrapper-china@0.1.0:
     dependencies:
       bin-check: 4.1.0
       bin-version-check: 4.0.0
+      binary-mirror-config: 1.41.0
       download: 7.1.0
-      import-lazy: 3.1.0
+      import-lazy: 4.0.0
       os-filter-obj: 2.0.0
       pify: 4.0.1
 
   binary-extensions@2.3.0: {}
+
+  binary-mirror-config@1.41.0: {}
 
   bindings@1.5.0:
     dependencies:
@@ -17035,15 +17002,6 @@ snapshots:
 
   connect-history-api-fallback@1.6.0: {}
 
-  connect@3.7.0:
-    dependencies:
-      debug: 2.6.9
-      finalhandler: 1.1.2
-      parseurl: 1.3.3
-      utils-merge: 1.0.1
-    transitivePeerDependencies:
-      - supports-color
-
   consola@2.15.3: {}
 
   consola@3.4.2: {}
@@ -17410,7 +17368,7 @@ snapshots:
   cwebp-bin@6.1.2:
     dependencies:
       bin-build: 3.0.0
-      bin-wrapper: 4.1.0
+      bin-wrapper: bin-wrapper-china@0.1.0
 
   cz-git@1.12.0: {}
 
@@ -18666,18 +18624,6 @@ snapshots:
     dependencies:
       to-regex-range: 5.0.1
 
-  finalhandler@1.1.2:
-    dependencies:
-      debug: 2.6.9
-      encodeurl: 1.0.2
-      escape-html: 1.0.3
-      on-finished: 2.3.0
-      parseurl: 1.3.3
-      statuses: 1.5.0
-      unpipe: 1.0.0
-    transitivePeerDependencies:
-      - supports-color
-
   find-up@1.1.2:
     dependencies:
       path-exists: 2.1.0
@@ -18909,7 +18855,7 @@ snapshots:
   gifsicle@5.2.0:
     dependencies:
       bin-build: 3.0.0
-      bin-wrapper: 4.1.0
+      bin-wrapper: bin-wrapper-china@0.1.0
       execa: 5.1.1
       logalot: 2.1.0
 
@@ -19417,8 +19363,6 @@ snapshots:
     dependencies:
       parent-module: 1.0.1
       resolve-from: 4.0.0
-
-  import-lazy@3.1.0: {}
 
   import-lazy@4.0.0: {}
 
@@ -20215,13 +20159,13 @@ snapshots:
   jpegtran-bin@5.0.2:
     dependencies:
       bin-build: 3.0.0
-      bin-wrapper: 4.1.0
+      bin-wrapper: bin-wrapper-china@0.1.0
       logalot: 2.1.0
 
   jpegtran-bin@6.0.1:
     dependencies:
       bin-build: 3.0.0
-      bin-wrapper: 4.1.0
+      bin-wrapper: bin-wrapper-china@0.1.0
 
   js-base64@2.6.4: {}
 
@@ -21026,10 +20970,6 @@ snapshots:
 
   mocked-exports@0.1.1: {}
 
-  mockjs@1.1.0:
-    dependencies:
-      commander: 11.1.0
-
   modify-values@1.0.1: {}
 
   module-alias@2.3.4: {}
@@ -21068,7 +21008,7 @@ snapshots:
   mozjpeg@7.1.1:
     dependencies:
       bin-build: 3.0.0
-      bin-wrapper: 4.1.0
+      bin-wrapper: bin-wrapper-china@0.1.0
 
   mpath@0.9.0: {}
 
@@ -21626,10 +21566,6 @@ snapshots:
       ufo: 0.8.6
       undici: 5.29.0
 
-  on-finished@2.3.0:
-    dependencies:
-      ee-first: 1.1.1
-
   on-finished@2.4.1:
     dependencies:
       ee-first: 1.1.1
@@ -21673,7 +21609,7 @@ snapshots:
   optipng-bin@7.0.1:
     dependencies:
       bin-build: 3.0.0
-      bin-wrapper: 4.1.0
+      bin-wrapper: bin-wrapper-china@0.1.0
 
   ora@5.4.1:
     dependencies:
@@ -21991,7 +21927,7 @@ snapshots:
   pngquant-bin@6.0.1:
     dependencies:
       bin-build: 3.0.0
-      bin-wrapper: 4.1.0
+      bin-wrapper: bin-wrapper-china@0.1.0
       execa: 4.1.0
 
   posix-character-classes@0.1.1: {}
@@ -24242,8 +24178,6 @@ snapshots:
       mz: 2.7.0
       unescape: 1.0.1
 
-  utils-merge@1.0.1: {}
-
   uuid@3.4.0: {}
 
   uuid@9.0.1: {}
@@ -24464,21 +24398,6 @@ snapshots:
       axios: 1.13.5(debug@4.4.3)
       debug: 4.4.3(supports-color@9.4.0)
       picocolors: 1.1.1
-      vite: 3.0.9(less@4.5.1)(sass@1.97.3)(terser@5.46.0)
-    transitivePeerDependencies:
-      - supports-color
-
-  vite-plugin-mock@2.9.8(mockjs@1.1.0)(vite@3.0.9(less@4.5.1)(sass@1.97.3)(terser@5.46.0)):
-    dependencies:
-      '@types/mockjs': 1.0.10
-      chalk: 4.1.2
-      chokidar: 3.6.0
-      connect: 3.7.0
-      debug: 4.4.3(supports-color@9.4.0)
-      esbuild: 0.14.54
-      fast-glob: 3.3.3
-      mockjs: 1.1.0
-      path-to-regexp: 6.3.0
       vite: 3.0.9(less@4.5.1)(sass@1.97.3)(terser@5.46.0)
     transitivePeerDependencies:
       - supports-color

@@ -61,7 +61,6 @@ export const useStatistics = () => {
     rankList.value = []
     orderField.value = field
     orderCondition.value = order as any
-    getRankListFn()
   }
 
   const handleScroll = useDebounce(() => {

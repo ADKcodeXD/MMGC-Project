@@ -38,12 +38,13 @@ export const useActivityList = () => {
   }
 }
 
-export const useActivityDetail = (activityId: number) => {
+export const useActivityDetail = (activityId: number | Ref<number>) => {
   const activityData = ref<ActivityVo>()
   let refreshFn = null
   const isLoading = ref(false)
 
   const getActivity = async (activityId: number) => {
+    if (!activityId) return
     isLoading.value = true
     try {
       const { data, refresh } = await getActivityDetail(activityId)
@@ -56,9 +57,13 @@ export const useActivityDetail = (activityId: number) => {
     }
   }
 
-  watchEffect(async () => {
-    await getActivity(activityId)
-  })
+  watch(
+    () => unref(activityId),
+    async id => {
+      await getActivity(id)
+    },
+    { immediate: true }
+  )
 
   return {
     activityData,
