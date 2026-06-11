@@ -109,6 +109,10 @@ export type DashboardOverviewData = {
   estimatedOverseaTrafficCost?: number
   currentStorageGB: number
   estimatedStorageCost: number
+  peakBandwidthMbps?: number
+  chinaPeakBandwidthMbps?: number
+  overseaPeakBandwidthMbps?: number
+  dailyStats?: SiteTrafficItem[]
 }
 
 export type SiteTrafficItem = {
@@ -117,6 +121,8 @@ export type SiteTrafficItem = {
   fluxGB: number
   chinaFluxGB: number
   overseaFluxGB: number
+  chinaBandwidthMbps?: number
+  overseaBandwidthMbps?: number
 }
 
 export type LoginResult =

@@ -136,7 +136,7 @@ export default class StatisticsService extends BaseService {
     const accessKey = config.QINIU_ACCESS_KEY || ''
     const secretKey = config.QINIU_SECRET_KEY || ''
     if (!accessKey || !secretKey) {
-      return { flux: [], uv: [] }
+      return []
     }
 
     const cdnLink = config.QINIU_CDN_LINK || ''
@@ -200,11 +200,39 @@ export default class StatisticsService extends BaseService {
       }
     }
 
+    // 3. Fetch Bandwidth
+    let bandwidthData: any = {}
+    if (cdnDomain) {
+      try {
+        const bwPayload = JSON.stringify({
+          domains: cdnDomain,
+          startDate,
+          endDate,
+          granularity: 'day'
+        })
+        const bwUrl = 'https://fusion.qiniuapi.com/v2/tune/bandwidth'
+        const bwToken = qiniu.util.generateAccessToken(mac, bwUrl, undefined)
+
+        const res = await axios.post(bwUrl, bwPayload, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: bwToken
+          }
+        })
+        bandwidthData = res.data
+      } catch (err: any) {
+        console.error('Failed to fetch Qiniu Bandwidth:', err?.response?.data || err?.message)
+      }
+    }
+
     const points = uvData?.data?.points || []
     const uvCount = uvData?.data?.uvCount || []
 
     const fluxTimes = (fluxData?.time || []).map((t: string) => t.substring(0, 10))
     const fluxDomainData = fluxData?.data?.[cdnDomain] || { china: [], oversea: [] }
+
+    const bwTimes = (bandwidthData?.time || []).map((t: string) => t.substring(0, 10))
+    const bwDomainData = bandwidthData?.data?.[cdnDomain] || { china: [], oversea: [] }
 
     const result = []
     for (let i = days - 1; i >= 0; i--) {
@@ -214,16 +242,36 @@ export default class StatisticsService extends BaseService {
       const dayUv = uvIdx >= 0 ? uvCount[uvIdx] : 0
 
       const fluxIdx = fluxTimes.indexOf(date)
-      let dayFlux = 0 // bytes
+      let chinaFlux = 0 // bytes
+      let overseaFlux = 0 // bytes
       if (fluxIdx >= 0) {
-        const chinaFlux = fluxDomainData.china?.[fluxIdx] || 0
-        const overseaFlux = fluxDomainData.oversea?.[fluxIdx] || 0
-        dayFlux = chinaFlux + overseaFlux
+        chinaFlux = fluxDomainData.china?.[fluxIdx] || 0
+        overseaFlux = fluxDomainData.oversea?.[fluxIdx] || 0
       }
-      
-      const fluxGB = Number((dayFlux / 1024 / 1024 / 1024).toFixed(4))
 
-      result.push({ date, dayUv, fluxGB })
+      const chinaFluxGB = Number((chinaFlux / 1024 / 1024 / 1024).toFixed(4))
+      const overseaFluxGB = Number((overseaFlux / 1024 / 1024 / 1024).toFixed(4))
+      const fluxGB = Number((chinaFluxGB + overseaFluxGB).toFixed(4))
+
+      const bwIdx = bwTimes.indexOf(date)
+      let chinaBps = 0
+      let overseaBps = 0
+      if (bwIdx >= 0) {
+        chinaBps = bwDomainData.china?.[bwIdx] || 0
+        overseaBps = bwDomainData.oversea?.[bwIdx] || 0
+      }
+      const chinaBandwidthMbps = Number((chinaBps / 1000 / 1000).toFixed(4))
+      const overseaBandwidthMbps = Number((overseaBps / 1000 / 1000).toFixed(4))
+
+      result.push({
+        date,
+        dayUv,
+        fluxGB,
+        chinaFluxGB,
+        overseaFluxGB,
+        chinaBandwidthMbps,
+        overseaBandwidthMbps
+      })
     }
 
     return result
@@ -240,7 +288,11 @@ export default class StatisticsService extends BaseService {
       estimatedChinaTrafficCost: 0,
       estimatedOverseaTrafficCost: 0,
       currentStorageGB: 0,
-      estimatedStorageCost: 0
+      estimatedStorageCost: 0,
+      peakBandwidthMbps: 0,
+      chinaPeakBandwidthMbps: 0,
+      overseaPeakBandwidthMbps: 0,
+      dailyStats: [] as any[]
     }
     if (!accessKey || !secretKey) {
       return defaultRes
@@ -252,41 +304,35 @@ export default class StatisticsService extends BaseService {
       cdnDomain = new URL(cdnLink).hostname
     } catch (e) { /* empty */ }
 
-    const endDate = dayjs().format('YYYY-MM-DD')
-    const startDate = dayjs().subtract(days - 1, 'day').format('YYYY-MM-DD')
     const mac = new qiniu.auth.digest.Mac(accessKey, secretKey)
 
-    // 1. Fetch Traffic
-    let totalChinaFlux = 0 // bytes
-    let totalOverseaFlux = 0 // bytes
-    if (cdnDomain) {
-      try {
-        const fluxPayload = JSON.stringify({
-          domains: cdnDomain,
-          startDate,
-          endDate,
-          granularity: 'day'
-        })
-        const fluxUrl = 'https://fusion.qiniuapi.com/v2/tune/flux'
-        const fluxToken = qiniu.util.generateAccessToken(mac, fluxUrl, undefined)
+    // 1. Fetch daily stats
+    const dailyStats = await this.getSiteTraffic(days)
 
-        const res = await axios.post(fluxUrl, fluxPayload, {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: fluxToken
-          }
-        })
-        const fluxData = res.data
-        const fluxDomainData = fluxData?.data?.[cdnDomain] || { china: [], oversea: [] }
-        totalChinaFlux = (fluxDomainData.china || []).reduce((sum: number, val: number) => sum + val, 0)
-        totalOverseaFlux = (fluxDomainData.oversea || []).reduce((sum: number, val: number) => sum + val, 0)
-      } catch (err: any) {
-        console.error('Failed to fetch Qiniu Flux for overview:', err?.response?.data || err?.message)
+    let totalChinaFluxGB = 0
+    let totalOverseaFluxGB = 0
+    let peakBandwidthMbps = 0
+    let chinaPeakBandwidthMbps = 0
+    let overseaPeakBandwidthMbps = 0
+
+    for (const stat of dailyStats) {
+      totalChinaFluxGB += stat.chinaFluxGB || 0
+      totalOverseaFluxGB += stat.overseaFluxGB || 0
+
+      const dailyTotalBw = (stat.chinaBandwidthMbps || 0) + (stat.overseaBandwidthMbps || 0)
+      if (dailyTotalBw > peakBandwidthMbps) {
+        peakBandwidthMbps = dailyTotalBw
+      }
+      if ((stat.chinaBandwidthMbps || 0) > chinaPeakBandwidthMbps) {
+        chinaPeakBandwidthMbps = stat.chinaBandwidthMbps || 0
+      }
+      if ((stat.overseaBandwidthMbps || 0) > overseaPeakBandwidthMbps) {
+        overseaPeakBandwidthMbps = stat.overseaBandwidthMbps || 0
       }
     }
 
-    const chinaTrafficGB = Number((totalChinaFlux / 1024 / 1024 / 1024).toFixed(4))
-    const overseaTrafficGB = Number((totalOverseaFlux / 1024 / 1024 / 1024).toFixed(4))
+    const chinaTrafficGB = Number(totalChinaFluxGB.toFixed(4))
+    const overseaTrafficGB = Number(totalOverseaFluxGB.toFixed(4))
     const totalTrafficGB = Number((chinaTrafficGB + overseaTrafficGB).toFixed(4))
 
     const estimatedChinaTrafficCost = Number((chinaTrafficGB * 0.15).toFixed(2))
@@ -327,7 +373,11 @@ export default class StatisticsService extends BaseService {
       estimatedChinaTrafficCost,
       estimatedOverseaTrafficCost,
       currentStorageGB,
-      estimatedStorageCost
+      estimatedStorageCost,
+      peakBandwidthMbps: Number(peakBandwidthMbps.toFixed(4)),
+      chinaPeakBandwidthMbps: Number(chinaPeakBandwidthMbps.toFixed(4)),
+      overseaPeakBandwidthMbps: Number(overseaPeakBandwidthMbps.toFixed(4)),
+      dailyStats
     }
   }
 }
