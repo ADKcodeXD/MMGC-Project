@@ -2,6 +2,10 @@ export default defineEventHandler(async event => {
   const runtime = useRuntimeConfig()
   const baseUrl = runtime.public.apiLocal || ''
   const prefix = runtime.public.apiPrefix || ''
+  if (event.node.req.url?.startsWith('/api/__sitemap__/')) {
+    return
+  }
+
   if (event.node.req.url?.startsWith('/api')) {
     const url = baseUrl + prefix + event.node.req.url.replace('/api', '')
     const query = getQuery(event)

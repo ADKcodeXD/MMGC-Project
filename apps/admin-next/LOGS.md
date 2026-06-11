@@ -398,3 +398,10 @@
 - Validation:
   - `corepack pnpm --filter @mmgc/admin-next run build` passed.
   - `corepack pnpm --filter @mmgc/admin run build` passed with existing non-blocking warnings.
+
+### Sitemap Legacy Source Compatibility
+
+- Added a compatibility route for `/api/__sitemap__/urls` that reuses the current `/__sitemap__/urls` sitemap source implementation.
+- Updated the frontend `/api` proxy middleware to skip `/api/__sitemap__/...`, preventing the sitemap source from being forwarded to the backend and returning `401 Unauthorized`.
+- Confirmed the built Nuxt sitemap source remains `/__sitemap__/urls`, while the legacy `/api/__sitemap__/urls` route is also registered for old sitemap caches or stale deployed configs.
+- Validation: `corepack pnpm --filter mirai-offcial-website exec nuxi build` passed.
