@@ -9,15 +9,19 @@
         <div style="padding: 16px 16px 0 16px;">
           <a-alert
             message="全新的后台管理系统已正式上线！"
-            description="我们重新设计了新版管理后台，提供更流畅的交互体验、全屏素材库、天数拖拽排序、暗黑模式等高级功能。建议您点击前往使用新版后台。"
             type="info"
             show-icon
             closable
           >
-            <template #action>
-              <a-button size="small" type="primary" href="/newAdmin" target="_blank">
-                立即前往新后台
-              </a-button>
+            <template #description>
+              <div>
+                我们重新设计了新版管理后台，提供更流畅的交互体验、全屏素材库、天数拖拽排序、暗黑模式等高级功能。建议您点击前往使用新版后台。
+              </div>
+              <div style="margin-top: 8px;">
+                <a-button size="small" type="primary" href="/newAdmin" target="_blank">
+                  立即前往新后台
+                </a-button>
+              </div>
             </template>
           </a-alert>
         </div>

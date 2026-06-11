@@ -228,4 +228,106 @@ export default class StatisticsService extends BaseService {
 
     return result
   }
+
+  async getDashboardOverview(days: number = 7) {
+    const accessKey = config.QINIU_ACCESS_KEY || ''
+    const secretKey = config.QINIU_SECRET_KEY || ''
+    const defaultRes = {
+      totalTrafficGB: 0,
+      chinaTrafficGB: 0,
+      overseaTrafficGB: 0,
+      estimatedTrafficCost: 0,
+      estimatedChinaTrafficCost: 0,
+      estimatedOverseaTrafficCost: 0,
+      currentStorageGB: 0,
+      estimatedStorageCost: 0
+    }
+    if (!accessKey || !secretKey) {
+      return defaultRes
+    }
+
+    const cdnLink = config.QINIU_CDN_LINK || ''
+    let cdnDomain = ''
+    try {
+      cdnDomain = new URL(cdnLink).hostname
+    } catch (e) {}
+
+    const endDate = dayjs().format('YYYY-MM-DD')
+    const startDate = dayjs().subtract(days - 1, 'day').format('YYYY-MM-DD')
+    const mac = new qiniu.auth.digest.Mac(accessKey, secretKey)
+
+    // 1. Fetch Traffic
+    let totalChinaFlux = 0 // bytes
+    let totalOverseaFlux = 0 // bytes
+    if (cdnDomain) {
+      try {
+        const fluxPayload = JSON.stringify({
+          domains: cdnDomain,
+          startDate,
+          endDate,
+          granularity: 'day'
+        })
+        const fluxUrl = 'https://fusion.qiniuapi.com/v2/tune/flux'
+        const fluxToken = qiniu.util.generateAccessToken(mac, fluxUrl, fluxPayload)
+
+        const res = await axios.post(fluxUrl, fluxPayload, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: fluxToken
+          }
+        })
+        const fluxData = res.data
+        const fluxDomainData = fluxData?.data?.[cdnDomain] || { china: [], oversea: [] }
+        totalChinaFlux = (fluxDomainData.china || []).reduce((sum: number, val: number) => sum + val, 0)
+        totalOverseaFlux = (fluxDomainData.oversea || []).reduce((sum: number, val: number) => sum + val, 0)
+      } catch (err: any) {
+        console.error('Failed to fetch Qiniu Flux for overview:', err?.response?.data || err?.message)
+      }
+    }
+
+    const chinaTrafficGB = Number((totalChinaFlux / 1024 / 1024 / 1024).toFixed(4))
+    const overseaTrafficGB = Number((totalOverseaFlux / 1024 / 1024 / 1024).toFixed(4))
+    const totalTrafficGB = Number((chinaTrafficGB + overseaTrafficGB).toFixed(4))
+
+    const estimatedChinaTrafficCost = Number((chinaTrafficGB * 0.15).toFixed(2))
+    const estimatedOverseaTrafficCost = Number((overseaTrafficGB * 0.15).toFixed(2))
+    const estimatedTrafficCost = Number((estimatedChinaTrafficCost + estimatedOverseaTrafficCost).toFixed(2))
+
+    // 2. Fetch Storage Size
+    let currentStorageGB = 0
+    const bucket = config.QINIU_BUCKET || ''
+    if (bucket) {
+      try {
+        const spaceBegin = dayjs().subtract(1, 'day').format('YYYYMMDD000000')
+        const spaceEnd = dayjs().format('YYYYMMDD235959')
+        const spaceUrl = `https://api.qiniuapi.com/v6/space?bucket=${bucket}&begin=${spaceBegin}&end=${spaceEnd}&g=day`
+        const spaceToken = qiniu.util.generateAccessToken(mac, spaceUrl, undefined)
+        const spaceAuthHeader = spaceToken.replace('QBox ', 'Qiniu ')
+
+        const res = await axios.get(spaceUrl, {
+          headers: {
+            Authorization: spaceAuthHeader
+          }
+        })
+        const datas = res.data?.datas || []
+        const lastSize = datas.length > 0 ? datas[datas.length - 1] : 0
+        currentStorageGB = Number((lastSize / 1024 / 1024 / 1024).toFixed(4))
+      } catch (err: any) {
+        console.error('Failed to fetch Qiniu space statistics:', err?.response?.data || err?.message)
+      }
+    }
+
+    const estimatedStorageCost = Number((currentStorageGB * 0.10).toFixed(2))
+
+    return {
+      totalTrafficGB,
+      chinaTrafficGB,
+      overseaTrafficGB,
+      estimatedTrafficCost,
+      estimatedChinaTrafficCost,
+      estimatedOverseaTrafficCost,
+      currentStorageGB,
+      estimatedStorageCost
+    }
+  }
 }
