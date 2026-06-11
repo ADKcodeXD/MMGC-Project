@@ -36,4 +36,14 @@ export const configSchema: FormSchema[] = [
       span: 12,
     },
   },
+  {
+    field: 'enableWatermark',
+    component: 'Switch',
+    label: '前端视频水印',
+    labelWidth: 100,
+    helpMessage: '开启后，前端播放视频将显示默认视觉水印',
+    colProps: {
+      span: 12,
+    },
+  },
 ]

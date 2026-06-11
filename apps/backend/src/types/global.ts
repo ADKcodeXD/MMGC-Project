@@ -120,6 +120,8 @@ declare global {
     day?: number
     /** 0代表未公开 1代表公开 */
     isPublic?: number
+    /** true means only movies not bound to any activity day */
+    unboundOnly?: boolean | string
     /** 上传者id */
     uploader?: number
   }
@@ -128,6 +130,7 @@ declare global {
     currentActivityId?: number
     skin?: string
     isVideoPlay?: boolean
+    enableWatermark?: boolean
     otherSettings?: string
     configType?: number
   }

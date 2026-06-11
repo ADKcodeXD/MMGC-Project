@@ -237,11 +237,14 @@
               {{ $t('firstViewTime') }}:{{ movieDetail.realPublishTime }}
             </p>
           </div>
-          <div class="flex my-4 items-center">
-            <MemberPop :member-vo="movieDetail?.author" v-if="movieDetail?.author" :size="36" />
-            <p class="sub-title mr-4">
-              {{ $t('author') }}:{{ movieDetail?.authorName || movieDetail?.author?.memberName }}
-            </p>
+          <div
+            class="flex my-4 items-center author-link"
+            :class="{ 'cursor-pointer': authorBiliLink }"
+            @click="authorBiliLink && openlink(authorBiliLink)"
+          >
+            <img v-if="authorAvatar" :src="authorAvatar" class="author-avatar mr-2" />
+            <MemberPop :member-vo="movieDetail?.author" v-else-if="movieDetail?.author" :size="36" />
+            <p class="sub-title mr-4">{{ $t('author') }}:{{ authorDisplayName }}</p>
           </div>
           <p
             class="ml-2 text-light-50 break-all overflow-auto"
@@ -418,6 +421,13 @@ const currentActivityId = computed(
 const currentActivityLogo = computed(
   () => movieDetail.value?.activityVo?.activityLogo || globalStore.currentActivityData?.activityLogo
 )
+const authorDisplayName = computed(
+  () => movieDetail.value?.authorName || movieDetail.value?.author?.memberName || ''
+)
+const authorAvatar = computed(
+  () => movieDetail.value?.authorAvatar || movieDetail.value?.author?.avatar || ''
+)
+const authorBiliLink = computed(() => movieDetail.value?.movieLink?.bilibili || '')
 
 const pollByLink = (movie: MovieVo, dayPollLink?: Sns | null) => {
   if (dayPollLink && (dayPollLink.bilibili || dayPollLink.twitter || dayPollLink.personalWebsite)) {
@@ -490,6 +500,18 @@ onMounted(async () => {
     align-items: flex-start;
     overflow: auto;
     padding: 12px;
+    .author-link {
+      border-radius: 999px;
+      padding: 4px 8px;
+    }
+    .author-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      object-fit: cover;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.12);
+    }
     .movie-play {
       border-radius: 20px;
       overflow: hidden;

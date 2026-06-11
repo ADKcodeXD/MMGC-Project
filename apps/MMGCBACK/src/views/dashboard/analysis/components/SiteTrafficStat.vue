@@ -35,6 +35,8 @@
           const dates = res.map((item) => item.date)
           const uvData = res.map((item) => item.dayUv)
           const fluxData = res.map((item) => item.fluxGB)
+          const chinaFluxData = res.map((item) => item.chinaFluxGB)
+          const overseaFluxData = res.map((item) => item.overseaFluxGB)
 
           setOptions({
             title: {
@@ -48,13 +50,13 @@
               },
             },
             legend: {
-              data: ['独立访客(UV)', 'CDN流量(GB)'],
+              data: ['独立访客(UV)', 'CDN流量(GB)', '国内流量(GB)', '海外流量(GB)'],
               bottom: 0,
             },
             grid: {
               left: '3%',
               right: '4%',
-              bottom: '10%',
+              bottom: '14%',
               containLabel: true,
             },
             xAxis: {
@@ -65,7 +67,7 @@
             yAxis: [
               {
                 type: 'value',
-                name: '访问量 (UV)',
+                name: '访问量(UV)',
                 position: 'left',
               },
               {
@@ -97,12 +99,32 @@
                 smooth: true,
                 yAxisIndex: 1,
                 areaStyle: {
-                  color: 'rgba(1, 150, 128, 0.2)',
+                  color: 'rgba(1, 150, 128, 0.16)',
                 },
                 itemStyle: {
                   color: '#019680',
                 },
                 data: fluxData,
+              },
+              {
+                name: '国内流量(GB)',
+                type: 'line',
+                smooth: true,
+                yAxisIndex: 1,
+                itemStyle: {
+                  color: '#f6bd16',
+                },
+                data: chinaFluxData,
+              },
+              {
+                name: '海外流量(GB)',
+                type: 'line',
+                smooth: true,
+                yAxisIndex: 1,
+                itemStyle: {
+                  color: '#7262fd',
+                },
+                data: overseaFluxData,
               },
             ],
           })

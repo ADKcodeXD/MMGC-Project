@@ -5,6 +5,10 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "dev:online": "turbo dev:online --filter=mirai-offcial-website",
+    "dev:adminonline": "corepack pnpm --filter @mmgc/admin run dev:adminonline",
+    "dev:admin-next": "corepack pnpm --filter @mmgc/admin-next run dev",
+    "dev:admin-next-online": "corepack pnpm --filter @mmgc/admin-next run dev:online",
+    "build:admin-next": "corepack pnpm --filter @mmgc/admin-next run build",
     "lint": "turbo lint",
     "start": "turbo start"
   },

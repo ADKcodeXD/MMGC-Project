@@ -2,6 +2,11 @@
   <ClientOnly>
     <div class="plyr-wrapper">
       <div ref="playerContainer" class="plyr-container"></div>
+      
+      <!-- 水印层 -->
+      <div v-if="enableWatermark" class="watermark-overlay" @contextmenu.prevent>
+        <img :src="miraiLogo" alt="watermark" />
+      </div>
 
       <!-- 移动端横屏提示 -->
       <div v-if="showOrientationTip" class="orientation-tip">
@@ -39,15 +44,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { calcZip } from '~~/utils'
+import { useGlobalStore } from '~~/stores/global'
+import Hls from 'hls.js'
+import miraiLogo from '~~/assets/img/mirai.png'
 
 interface VideoSource {
   src: string
   type: string
   label: string
 }
+
+const HLS_TYPE = 'application/x-mpegURL'
+const MP4_TYPE = 'video/mp4'
 
 const props = defineProps<{
   videoUrl: string | any[] | any
@@ -57,8 +68,12 @@ const props = defineProps<{
 const emit = defineEmits(['onPlay', 'onAbort', 'onPause'])
 const { locale } = useI18n()
 
+const globalStore = useGlobalStore()
+const enableWatermark = computed(() => globalStore.config.enableWatermark ?? true)
+
 const playerContainer = ref<HTMLElement>()
 let player: any = null
+let hlsInstance: Hls | null = null
 let isUnmounted = false
 let isInitializing = false
 const currentLabel = ref(locale.value)
@@ -159,33 +174,39 @@ const coverzip = computed(() => {
   return ''
 })
 
+function isHlsSource(url: string) {
+  return /\.m3u8(?:[?#].*)?$/i.test(url)
+}
+
+function getSourceType(url: string) {
+  return isHlsSource(url) ? HLS_TYPE : MP4_TYPE
+}
+
+function createVideoSource(url: string, label: string): VideoSource {
+  return {
+    src: url,
+    type: getSourceType(url),
+    label
+  }
+}
+
 const sources = computed<VideoSource[]>(() => {
   if (isArray(props.videoUrl)) {
-    return props.videoUrl.map((item: any) => ({
-      src: item.url,
-      type: 'video/mp4',
-      label: item.label
-    }))
+    return props.videoUrl.map((item: any) => createVideoSource(item.url, item.label))
   } else if (isObject(props.videoUrl)) {
-    return Object.keys(props.videoUrl).map((key: string) => ({
-      src: props.videoUrl[key],
-      type: 'video/mp4',
-      label: key
-    }))
+    return Object.keys(props.videoUrl).map((key: string) => createVideoSource(props.videoUrl[key], key))
   } else {
-    return [
-      {
-        src: props.videoUrl,
-        type: 'video/mp4',
-        label: 'default'
-      }
-    ]
+    return [createVideoSource(props.videoUrl, 'default')]
   }
 })
 
-const currentSrc = computed(() => {
+const currentSource = computed(() => {
   const found = sources.value.find(item => item.label === currentLabel.value)
-  return found ? found.src : sources.value[0]?.src || ''
+  return found || sources.value[0]
+})
+
+const currentSrc = computed(() => {
+  return currentSource.value?.src || ''
 })
 
 // 检测移动设备
@@ -248,15 +269,10 @@ function createVideoElement() {
   const video = document.createElement('video')
   video.poster = coverzip.value || ''
   video.playsInline = true
+  video.preload = 'metadata'
   video.crossOrigin = 'anonymous'
   video.setAttribute('playsinline', '')
-
-  if (currentSrc.value) {
-    const source = document.createElement('source')
-    source.src = currentSrc.value
-    source.type = 'video/mp4'
-    video.appendChild(source)
-  }
+  video.setAttribute('preload', 'metadata')
 
   playerContainer.value?.replaceChildren(video)
   return video
@@ -266,26 +282,74 @@ function updatePlayerSource(currentTime = 0, wasPlaying = false, volume = player
   if (!player || !currentSrc.value) return
 
   player.poster = coverzip.value || ''
-  player.source = {
-    type: 'video',
-    sources: [
-      {
-        src: currentSrc.value,
-        type: 'video/mp4'
-      }
-    ]
+  const video = player.media as HTMLVideoElement | undefined
+  const source = currentSource.value
+  
+  if (hlsInstance) {
+    hlsInstance.destroy()
+    hlsInstance = null
   }
 
-  player.once('loadedmetadata', () => {
-    if (currentTime > 0 && currentTime < player.duration) {
-      player.currentTime = currentTime
-    }
-    player.volume = volume
+  if (!source) return
 
-    if (wasPlaying) {
-      player.play().catch(console.error)
+  if (source.type === HLS_TYPE && video?.canPlayType('application/vnd.apple.mpegurl')) {
+    player.source = {
+      type: 'video',
+      sources: [source]
     }
-  })
+    player.once('error', () => emit('onAbort'))
+    player.once('loadedmetadata', () => {
+      if (currentTime > 0 && currentTime < player.duration) {
+        player.currentTime = currentTime
+      }
+      player.volume = volume
+      if (wasPlaying) player.play().catch(console.error)
+    })
+    return
+  }
+
+  if (source.type === HLS_TYPE && Hls.isSupported() && video) {
+    hlsInstance = new Hls({
+      enableWorker: true
+    })
+    hlsInstance.attachMedia(video)
+    hlsInstance.on(Hls.Events.MEDIA_ATTACHED, () => {
+      hlsInstance?.loadSource(source.src)
+    })
+    hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+      if (currentTime > 0) player.currentTime = currentTime
+      player.volume = volume
+      if (wasPlaying) player.play().catch(console.error)
+    })
+    hlsInstance.on(Hls.Events.ERROR, (_, data) => {
+      console.error('HLS error:', data)
+      if (!data.fatal || !hlsInstance) return
+      if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+        hlsInstance.startLoad()
+      } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+        hlsInstance.recoverMediaError()
+      } else {
+        hlsInstance.destroy()
+        hlsInstance = null
+        emit('onAbort')
+      }
+    })
+  } else {
+    player.source = {
+      type: 'video',
+      sources: [source]
+    }
+    player.once('loadedmetadata', () => {
+      if (currentTime > 0 && currentTime < player.duration) {
+        player.currentTime = currentTime
+      }
+      player.volume = volume
+
+      if (wasPlaying) {
+        player.play().catch(console.error)
+      }
+    })
+  }
 }
 
 function bindPlayerEvents() {
@@ -388,6 +452,13 @@ async function initPlayer() {
     }
   })
 
+  // Prevent right click on video
+  video.addEventListener('contextmenu', (e) => {
+    e.preventDefault()
+  })
+
+  updatePlayerSource(0, false, 0.6)
+
   bindPlayerEvents()
   isInitializing = false
 }
@@ -429,6 +500,10 @@ onBeforeUnmount(() => {
   // Hide player container before destroy to prevent poster flash during transition
   if (playerContainer.value) {
     playerContainer.value.style.opacity = '0'
+  }
+  if (hlsInstance) {
+    hlsInstance.destroy()
+    hlsInstance = null
   }
   if (player) {
     player.destroy()
@@ -868,6 +943,8 @@ defineExpose({
 }
 
 // 暗色主题支持
+
+// 暗色主题支持
 @media (prefers-color-scheme: dark) {
   .orientation-tip .orientation-content {
     background: #2a2a2a;
@@ -889,6 +966,31 @@ defineExpose({
         background: rgba(255, 255, 255, 0.2);
         color: #fff;
       }
+    }
+  }
+}
+
+.watermark-overlay {
+  position: absolute;
+  bottom: 8%;
+  right: 5%;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0.7;
+  
+  img {
+    width: 100px;
+    height: auto;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  }
+}
+
+@media (max-width: 768px) {
+  .watermark-overlay {
+    bottom: 12%;
+    right: 3%;
+    img {
+      width: 60px;
     }
   }
 }

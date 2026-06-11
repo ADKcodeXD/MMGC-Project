@@ -16,6 +16,10 @@ declare module 'Movie' {
      */
     authorName: null | string
     /**
+     * External author avatar, usually fetched from Bilibili and stored on CDN.
+     */
+    authorAvatar: null | string
+    /**
      * 评论次数
      */
     commentNums: number
@@ -95,6 +99,7 @@ declare module 'Movie' {
         | 'movieDownloadLink'
         | 'authorId'
         | 'authorName'
+        | 'authorAvatar'
         | 'realPublishTime'
         | 'expectPlayTime'
         | 'activityId'

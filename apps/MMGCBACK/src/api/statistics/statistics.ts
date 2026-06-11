@@ -8,6 +8,7 @@ enum Api {
   DELETE = '/statistics/deleteAuthor',
   UPDATE = '/statistics/updateAuthor',
   GET_SITE_TRAFFIC = '/statistics/siteTraffic',
+  GET_DASHBOARD_OVERVIEW = '/statistics/dashboardOverview',
 }
 
 export function saveAuthor(params: StatisticsParams, mode?: ErrorMessageMode) {
@@ -42,11 +43,31 @@ export interface SiteTrafficData {
   date: string;
   dayUv: number;
   fluxGB: number;
+  chinaFluxGB: number;
+  overseaFluxGB: number;
+}
+
+export interface DashboardOverviewData {
+  totalTrafficGB: number;
+  chinaTrafficGB: number;
+  overseaTrafficGB: number;
+  estimatedTrafficCost: number;
+  estimatedChinaTrafficCost: number;
+  estimatedOverseaTrafficCost: number;
+  currentStorageGB: number;
+  estimatedStorageCost: number;
 }
 
 export function getSiteTrafficStats(days?: number, mode?: ErrorMessageMode) {
   return defHttp.get<SiteTrafficData[]>(
     { url: Api.GET_SITE_TRAFFIC, params: { days } },
+    { errorMessageMode: mode || 'none' },
+  )
+}
+
+export function getDashboardOverview(days?: number, mode?: ErrorMessageMode) {
+  return defHttp.get<DashboardOverviewData>(
+    { url: Api.GET_DASHBOARD_OVERVIEW, params: { days } },
     { errorMessageMode: mode || 'none' },
   )
 }

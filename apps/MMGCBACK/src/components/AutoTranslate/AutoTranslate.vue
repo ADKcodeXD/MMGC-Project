@@ -38,9 +38,9 @@
     if (!sourceText.value) return
     loading.value = true
     try {
-      const { data } = await autoTranslate(sourceText.value, props.isHtml)
+      const data = await autoTranslate(sourceText.value, props.isHtml)
       if (data) {
-        emit('done', data as unknown as I18N)
+        emit('done', data)
         createMessage.success('翻译完成')
       }
     } catch {

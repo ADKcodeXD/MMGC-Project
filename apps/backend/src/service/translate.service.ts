@@ -3,6 +3,13 @@ import axios from 'axios'
 import config from '~/config/config.default'
 import logger from '~/common/utils/log4j'
 
+type TranslationResponse = {
+	cn?: unknown
+	en?: unknown
+	ja?: unknown
+	jp?: unknown
+}
+
 @Service(true)
 export default class TranslateService {
 	private get apiKey() {
@@ -17,15 +24,44 @@ export default class TranslateService {
 		return config.OPENAI_BASE_URL || 'https://api.apifast.tech/v1'
 	}
 
+	private normalizeText(value: unknown) {
+		return typeof value === 'string' ? value.trim() : ''
+	}
+
+	private parseTranslationContent(content: string): TranslationResponse | null {
+		const normalized = content
+			.trim()
+			.replace(/^```(?:json)?\s*/i, '')
+			.replace(/\s*```$/i, '')
+
+		const candidates = [normalized]
+		const firstBrace = normalized.indexOf('{')
+		const lastBrace = normalized.lastIndexOf('}')
+		if (firstBrace >= 0 && lastBrace > firstBrace) {
+			candidates.push(normalized.slice(firstBrace, lastBrace + 1))
+		}
+
+		for (const candidate of candidates) {
+			try {
+				return JSON.parse(candidate)
+			} catch {}
+		}
+
+		return null
+	}
+
 	async translate(text: string, isHtml?: boolean): Promise<I18N | null> {
+		const sourceText = this.normalizeText(text)
+		if (!sourceText) return null
+
 		if (!this.apiKey) {
 			logger.error('AI Translation API Key (OPENAI_API_KEY) is not configured')
 			return null
 		}
 
 		const systemPrompt = isHtml
-			? `You are a professional translator. Translate the given HTML content into Chinese (cn), English (en), and Japanese (ja). Preserve all HTML tags and structure. Return ONLY a JSON object with the format: {"cn": "...", "en": "...", "ja": "..."}. No extra text or markdown wrapping.`
-			: `You are a professional translator. Translate the given text into Chinese (cn), English (en), and Japanese (ja). Return ONLY a JSON object with the format: {"cn": "...", "en": "...", "ja": "..."}. No extra text or markdown wrapping.`
+			? `You are a professional translator for an ACG video site admin form. Translate the given HTML content into Chinese (cn), English (en), and Japanese (ja). Preserve every HTML tag, attribute, entity, and line break. Return ONLY valid JSON in this exact shape: {"cn":"...","en":"...","ja":"..."}.`
+			: `You are a professional translator for an ACG video site admin form. Translate the given text into Chinese (cn), English (en), and Japanese (ja). Keep titles concise and descriptions natural. Return ONLY valid JSON in this exact shape: {"cn":"...","en":"...","ja":"..."}.`
 
 		try {
 			const response = await axios.post(
@@ -34,9 +70,9 @@ export default class TranslateService {
 					model: this.model,
 					messages: [
 						{ role: 'system', content: systemPrompt },
-						{ role: 'user', content: text }
+						{ role: 'user', content: sourceText }
 					],
-					temperature: 0.3
+					temperature: 0.1
 				},
 				{
 					headers: {
@@ -53,18 +89,16 @@ export default class TranslateService {
 				return null
 			}
 
-			// Extract JSON from response (handle possible markdown wrapping)
-			const jsonMatch = content.match(/\{[\s\S]*\}/)
-			if (!jsonMatch) {
+			const result = this.parseTranslationContent(content)
+			if (!result) {
 				logger.error(`Failed to parse translation response: ${content}`)
 				return null
 			}
 
-			const result = JSON.parse(jsonMatch[0])
 			return {
-				cn: result.cn || '',
-				en: result.en || '',
-				jp: result.ja || result.jp || ''
+				cn: this.normalizeText(result.cn) || sourceText,
+				en: this.normalizeText(result.en),
+				jp: this.normalizeText(result.ja) || this.normalizeText(result.jp)
 			}
 		} catch (error: any) {
 			logger.error(`Translation error: ${error?.message || error}`)

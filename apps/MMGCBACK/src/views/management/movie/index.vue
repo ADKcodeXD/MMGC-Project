@@ -30,7 +30,7 @@
     <div class="list">
       <p class="text-gray-400">查询到：{{ movieListData.total }}条数据</p>
       <Spin :spinning="isLoading">
-        <div v-if="movieListData.result.length > 0">
+        <div v-if="movieListData.result.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pt-4">
           <MovieItem
             v-for="item in movieListData.result"
             :key="item.movieId"

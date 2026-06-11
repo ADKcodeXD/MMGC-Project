@@ -5,7 +5,7 @@ enum Api {
 }
 
 export function autoTranslate(text: string, isHtml?: boolean) {
-  return defHttp.post<ResResult<I18N>>(
+  return defHttp.post<I18N>(
     { url: Api.TRANSLATE, params: { text, isHtml }, timeout: 60000 },
     { errorMessageMode: 'message' },
   )

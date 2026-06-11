@@ -224,12 +224,24 @@ export default class MovieService extends BaseService {
       _filter.uploader = parseInt(movieParams.uploader.toString())
     }
 
-    if (movieParams.activityId) {
-      _filter.activityId = parseInt(movieParams.activityId.toString())
-    }
+    const unboundOnly =
+      movieParams.unboundOnly === true ||
+      movieParams.unboundOnly === 'true' ||
+      movieParams.unboundOnly === '1'
 
-    if (movieParams.day) {
-      _filter.day = parseInt(movieParams.day.toString())
+    if (unboundOnly) {
+      _filter.$and = [
+        { $or: [{ activityId: { $exists: false } }, { activityId: null }] },
+        { $or: [{ day: { $exists: false } }, { day: null }] }
+      ]
+    } else {
+      if (movieParams.activityId) {
+        _filter.activityId = parseInt(movieParams.activityId.toString())
+      }
+
+      if (movieParams.day) {
+        _filter.day = parseInt(movieParams.day.toString())
+      }
     }
 
     const res = await pageQuery(movieParams, this.movieModel, aggreFilter(_filter, _additionFields))

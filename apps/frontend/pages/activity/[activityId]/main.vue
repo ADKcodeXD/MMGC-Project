@@ -165,6 +165,9 @@ const onVideoPlay = () => {
     pauseTimer = null
   }
   isPlaying.value = true
+  if (activeVideo.value && activeVideo.value.movieId) {
+    useNuxtApp().$track('play_video', { movieId: activeVideo.value.movieId, movieName: activeVideo.value.movieName })
+  }
 }
 
 const onVideoPause = () => {

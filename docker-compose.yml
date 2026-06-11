@@ -58,12 +58,21 @@ services:
     networks:
       - mmgc-net
 
-  # Admin 为 SPA，API 请求由浏览器发起，需在构建时配置 VITE_GLOB_API_URL 为公网可访问的 API 地址（或 Nginx 反代）
+  # 旧后台 Admin (Vue)
   admin:
     image: ${IMAGE_REGISTRY:-ghcr.io/adkcodexd}/mmgc-admin:latest
     restart: unless-stopped
     ports:
       - "8080:80"
+    networks:
+      - mmgc-net
+
+  # 新后台 Admin-Next (React + Vite)
+  admin-next:
+    image: ${IMAGE_REGISTRY:-ghcr.io/adkcodexd}/mmgc-admin-next:latest
+    restart: unless-stopped
+    ports:
+      - "8081:80"
     networks:
       - mmgc-net
 

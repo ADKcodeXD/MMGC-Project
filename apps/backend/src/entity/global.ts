@@ -14,6 +14,7 @@ export class MMGCSysConfigEntity implements MMGCSysConfig {
 	currentActivityId = 0
 	skin = ''
 	isVideoPlay = true
+	enableWatermark = true
 	otherSettings = ''
 	configType = 1
 }

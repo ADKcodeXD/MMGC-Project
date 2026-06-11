@@ -1,81 +1,95 @@
 <template>
-  <PageWrapper :class="prefixCls" title="活动列表">
+  <PageWrapper title="活动列表" contentBackground content="新建一套活动，并且关联作品吧。在右上方新建。">
     <template #headerContent>
-      <div class="flex justify-between items-center">
-        <p>新建一套活动，并且关联作品吧。</p>
-        <div>
-          <a-button color="success" @click="router.push('/form/activity')">新建活动</a-button>
-        </div>
+      <div class="flex justify-end">
+        <a-button type="primary" color="success" @click="router.push('/form/activity')">新建活动</a-button>
       </div>
     </template>
-    <div :class="`${prefixCls}__content`">
-      <List>
+    
+    <div class="p-4 bg-white dark:bg-dark-900 rounded-md">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <template v-for="item in activityListData.result" :key="item.activityId">
-          <ListItem class="list">
-            <ListItemMeta>
-              <template #avatar>
-                <Image :width="100" :height="100" :src="item.activityCover" :preview="false" />
-              </template>
-              <template #title>
-                <div class="flex justify-between">
-                  <div>{{ item.activityName.cn || '未知活动' }}</div>
-                  <div>
-                    <a-button
-                      color="info"
-                      class="mx-2"
-                      @click="router.push(`/management/activity/${item.activityId}`)"
-                    >
-                      详情
-                    </a-button>
-                    <a-button
-                      color="error"
-                      class="mx-2"
-                      @click="() => deleteActivityFn(item.activityId)"
-                    >
-                      删除
-                    </a-button>
-                  </div>
+          <div class="group relative bg-white dark:bg-dark-800 rounded-xl shadow-sm hover:shadow-md border border-gray-200 dark:border-gray-700 transition-all duration-300 overflow-hidden flex flex-col">
+            <!-- Cover Image -->
+            <div class="relative w-full aspect-video overflow-hidden bg-gray-100 dark:bg-dark-900">
+              <img :src="item.activityCover" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              <!-- Status Tag overlay -->
+              <div class="absolute top-3 left-3 bg-black/60 backdrop-blur-md text-white text-xs px-2.5 py-1 rounded-full border border-white/20">
+                ID: {{ item.activityId }}
+              </div>
+            </div>
+            
+            <!-- Content -->
+            <div class="p-4 flex-1 flex flex-col">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2 line-clamp-1">
+                {{ item.activityName.cn || '未知活动' }}
+              </h3>
+              
+              <div class="space-y-2 text-sm text-gray-600 dark:text-gray-400 mb-4 flex-1">
+                <div class="flex items-center">
+                  <span class="mr-2">周期:</span>
+                  <span>{{ item.startTime || '未设置' }} ~ {{ item.endTime || '未设置' }}</span>
                 </div>
-              </template>
-              <template #description>
-                <div class="activity-list-desc">
-                  <div class="info-group">
-                    <div class="info-item">
-                      <span class="label">活动ID:</span>
-                      <span class="value">{{ item.activityId }}</span>
-                    </div>
-                    <div class="info-item">
-                      <span class="label">周期:</span>
-                      <span class='value'>{{ item.startTime || '未设置' }} ~ {{ item.endTime || '未设置' }}</span>
-                    </div>
-                    <div class="info-item">
-                      <span class="label">天数:</span>
-                      <span class="value">{{ item.days }} 天</span>
-                    </div>
-                  </div>
-                  <div class="staff-group" v-if="item.staff?.length">
-                    <span class="label">主办方:</span>
-                    <span
-                      v-for="member in item.staff.filter((s) => s.role === 'organizer')"
-                      :key="member.name"
-                      class="value"
-                    >{{ member.name }}</span>
-                  </div>
+                <div class="flex items-center">
+                  <span class="mr-2">天数:</span>
+                  <span class="font-medium text-primary">{{ item.days }} 天</span>
                 </div>
-              </template>
-            </ListItemMeta>
-          </ListItem>
+                <div class="flex items-center" v-if="item.staff?.length">
+                  <span class="mr-2">主办方:</span>
+                  <span class="truncate">
+                    {{ item.staff.filter((s) => s.role === 'organizer').map(s => s.name).join(' / ') }}
+                  </span>
+                </div>
+              </div>
+              
+              <!-- Actions -->
+              <div class="pt-4 mt-auto border-t border-gray-100 dark:border-gray-700 flex items-center justify-between gap-2">
+                <a-button type="default" size="small" @click="router.push(`/management/activity/${item.activityId}`)">
+                  详情
+                </a-button>
+                <div class="flex gap-2">
+                  <a-button type="primary" size="small" preIcon="ant-design:eye-outlined" @click="openPreview(item)">
+                    预览
+                  </a-button>
+                  <a-button color="error" size="small" @click="() => deleteActivityFn(item.activityId)">
+                    删除
+                  </a-button>
+                </div>
+              </div>
+            </div>
+          </div>
         </template>
-      </List>
+      </div>
     </div>
+
+    <!-- Preview Drawer -->
+    <a-drawer
+      v-model:visible="previewVisible"
+      :title="`活动预览 - ${previewActivity?.activityName?.cn || ''}`"
+      placement="right"
+      width="100%"
+      :body-style="{ padding: 0 }"
+      destroyOnClose
+    >
+      <div class="w-full h-full bg-gray-50 flex flex-col">
+        <div class="p-2 bg-gray-100 border-b flex items-center justify-between text-sm text-gray-500">
+          <span class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-red-400"></span>
+            <span class="w-3 h-3 rounded-full bg-yellow-400"></span>
+            <span class="w-3 h-3 rounded-full bg-green-400"></span>
+          </span>
+          <span class="bg-white px-4 py-1 rounded-md shadow-sm text-xs font-mono border">{{ previewUrl }}</span>
+          <span></span>
+        </div>
+        <iframe :src="previewUrl" class="w-full flex-1 border-none bg-white"></iframe>
+      </div>
+    </a-drawer>
   </PageWrapper>
 </template>
 <script lang="ts" setup>
-  import { reactive } from 'vue'
+  import { reactive, ref, computed } from 'vue'
   import { useRouter } from 'vue-router'
   import { PageWrapper } from '/@/components/Page'
-  import { MemberPopover } from '/@/components/MemberPopover'
-  import { List, Image, ListItemMeta, ListItem } from 'ant-design-vue'
   import { deleteActivity, getActivityList } from '/@/api/activity/activity'
   import { ActivityVo } from '/@/api/activity/model/activityEntity'
   import { useMessage } from '/@/hooks/web/useMessage'
@@ -88,13 +102,29 @@
     total: 0,
     result: [],
   })
+  
+  // Preview Drawer State
+  const previewVisible = ref(false)
+  const previewActivity = ref<ActivityVo | null>(null)
+  
+  const frontendUrl = import.meta.env.VITE_FRONTEND_URL || 'http://localhost:3000'
+  const previewUrl = computed(() => {
+    if (!previewActivity.value) return ''
+    return `${frontendUrl}/activity/${previewActivity.value.activityId}/about`
+  })
+
+  const openPreview = (item: ActivityVo) => {
+    previewActivity.value = item
+    previewVisible.value = true
+  }
+
   async function getList() {
-    const { data } = await getActivityList({ page: 1, pageSize: 10 })
+    const { data } = await getActivityList({ page: 1, pageSize: 100 })
     activityListData.result = data.result
     activityListData.page = data.page
     activityListData.total = data.total
   }
-  const prefixCls = 'list-basic'
+  
   getList()
 
   const deleteActivityFn = async (activityId: number) => {
@@ -110,116 +140,5 @@
     })
   }
 </script>
-<style lang="less" scoped>
-  .list-basic {
-    &__top {
-      padding: 24px;
-      text-align: center;
-      background-color: @component-background;
-
-      &-col {
-        &:not(:last-child) {
-          border-right: 1px dashed @border-color-base;
-        }
-
-        div {
-          margin-bottom: 12px;
-          font-size: 14px;
-          line-height: 22px;
-          color: @text-color;
-        }
-
-        p {
-          margin: 0;
-          font-size: 24px;
-          line-height: 32px;
-          color: @text-color;
-        }
-      }
-    }
-
-    &__content {
-      padding: 24px;
-      margin-top: 12px;
-      background-color: @component-background;
-
-      .list {
-        position: relative;
-      }
-
-      .icon {
-        font-size: 40px !important;
-      }
-
-      .description {
-        display: inline-block;
-        width: 100%;
-      }
-
-      .activity-list-desc {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        margin-top: 8px;
-
-        .info-group {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 24px;
-
-          .info-item {
-            display: flex;
-            align-items: center;
-            font-size: 14px;
-
-            .label {
-              color: @text-color-secondary;
-              margin-right: 8px;
-            }
-
-            .value {
-              color: @text-color;
-              font-weight: 500;
-            }
-          }
-        }
-
-        .staff-group {
-          display: flex;
-          align-items: center;
-          padding: 8px 12px;
-          background-color: @background-color-light;
-          border-radius: 4px;
-          width: fit-content;
-
-          .label {
-            color: @text-color-secondary;
-            margin-right: 12px;
-            font-size: 13px;
-          }
-        }
-      }
-
-      .info {
-        display: inline-block;
-        width: 30%;
-        text-align: center;
-
-        div {
-          display: inline-block;
-          padding: 0 20px;
-
-          span {
-            display: block;
-          }
-        }
-      }
-
-      .progress {
-        display: inline-block;
-        width: 15%;
-        vertical-align: top;
-      }
-    }
-  }
+<style scoped>
 </style>

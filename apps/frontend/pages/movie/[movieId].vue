@@ -27,11 +27,14 @@
           </div>
         </div>
 
-        <div class="flex items-end self-end justify-end">
-          <p class="sub-title mr-4">
-            {{ $t('author') }}:{{ movieDetail?.authorName || movieDetail?.author?.memberName }}
-          </p>
-          <MemberPop :member-vo="movieDetail?.author" v-if="movieDetail?.author" :size="36" />
+        <div
+          class="flex items-center self-end justify-end author-link"
+          :class="{ 'cursor-pointer': authorBiliLink }"
+          @click="authorBiliLink && openlink(authorBiliLink)"
+        >
+          <img v-if="authorAvatar" :src="authorAvatar" class="author-avatar mr-2" />
+          <p class="sub-title mr-4">{{ $t('author') }}:{{ authorDisplayName }}</p>
+          <MemberPop :member-vo="movieDetail?.author" v-if="movieDetail?.author && !authorAvatar" :size="36" />
         </div>
       </div>
       <div class="under flex w-full">
@@ -279,6 +282,13 @@ const { locale } = useCurrentLocale()
 const { t } = useI18n()
 const { unloading } = useGlobalStore()
 const { pollMovie, likeOrUnLike } = useMovieOperate()
+const authorDisplayName = computed(
+  () => movieDetail.value?.authorName || movieDetail.value?.author?.memberName || ''
+)
+const authorAvatar = computed(
+  () => movieDetail.value?.authorAvatar || movieDetail.value?.author?.avatar || ''
+)
+const authorBiliLink = computed(() => movieDetail.value?.movieLink?.bilibili || '')
 
 const pollByLink = (movie: MovieVo, dayPollLink?: Sns | null) => {
   if (dayPollLink && (dayPollLink.bilibili || dayPollLink.twitter || dayPollLink.personalWebsite)) {
@@ -336,6 +346,22 @@ onMounted(async () => {
       flex-direction: column;
       align-items: flex-start;
       overflow: auto;
+      .author-link {
+        border-radius: 999px;
+        padding: 4px 8px;
+        transition: background 0.2s;
+      }
+      .author-link:hover {
+        background: rgba(255, 255, 255, 0.1);
+      }
+      .author-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        object-fit: cover;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        background: rgba(255, 255, 255, 0.12);
+      }
       .under {
         height: calc(100% - 80px);
         .underleft {

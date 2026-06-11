@@ -10,6 +10,7 @@
     "commit": "czg",
     "serve": "npm run dev",
     "dev": "vite",
+    "dev:adminonline": "vite --mode adminonline",
     "lint": "npm-run-all lint:eslint lint:prettier lint:stylelint",
     "dev:prod": "cross-env NODE_ENV=production vite",
     "build": "cross-env NODE_ENV=production vite build && esno ./build/script/postBuild.ts",

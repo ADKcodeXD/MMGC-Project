@@ -1,17 +1,34 @@
 import { MemberVo } from 'Member'
 import { StatisticsParams, StatisticsUpdateParams } from 'Statistics'
 import { Auth } from '~/common/decorator/auth'
-import { Controller, PostMapping, Body, User, Autowired, DeleteMapping, Param, GetMapping } from '~/common/decorator/decorator'
+import { Controller, PostMapping, Body, User, Autowired, DeleteMapping, Param, GetMapping, Ctx } from '~/common/decorator/decorator'
 import Result from '~/common/result'
 import { addNewAuthorParamsValidate, updateAuthorParamsValidate } from '~/common/validate/validate'
 import { Validtor } from '~/middleware/ajv.middleware'
 import StatisticsService from '~/service/statistics.service'
 import { RESULT_CODE, RESULT_MSG } from '~/types/enum'
+import { IpUtils } from '~/common/utils/ipUtils'
+import { Context } from 'koa'
 
 @Controller('/statistics')
 export default class StatisticsController {
   @Autowired()
   statisticsService!: StatisticsService
+
+  @Autowired()
+  ipUtils!: IpUtils
+
+  @PostMapping('/track')
+  async track(@Body() trackParams: any, @Ctx() ctx: Context) {
+    const ip = this.ipUtils.getIp(ctx)
+    const userAgent = ctx.headers['user-agent'] || ''
+    await this.statisticsService.saveTrack({
+      ...trackParams,
+      ip,
+      userAgent
+    })
+    return Result.success(null)
+  }
 
   @PostMapping('/getAuthorRank')
   async getAuthorRank(@Body() pageParams: PageParams) {

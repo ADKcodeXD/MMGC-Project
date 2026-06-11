@@ -52,13 +52,21 @@ jobs:
           push: true
           tags: ${{ env.GHCR_PREFIX }}/mmgc-frontend:latest
 
-      - name: Build & push admin
+      - name: Build & push admin (old)
         uses: docker/build-push-action@v6
         with:
           context: .
           file: apps/MMGCBACK/Dockerfile
           push: true
           tags: ${{ env.GHCR_PREFIX }}/mmgc-admin:latest
+
+      - name: Build & push admin-next (new)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/admin-next/Dockerfile
+          push: true
+          tags: ${{ env.GHCR_PREFIX }}/mmgc-admin-next:latest
 
       - name: Push to Aliyun ACR (personal)
         run: |
@@ -67,7 +75,7 @@ jobs:
             exit 0
           fi
           echo "$ACR_PASS" | docker login "$ACR_REG" -u "$ACR_USER" --password-stdin
-          for img in mmgc-backend mmgc-frontend mmgc-admin; do
+          for img in mmgc-backend mmgc-frontend mmgc-admin mmgc-admin-next; do
             docker pull ${{ env.GHCR_PREFIX }}/$img:latest
             docker tag ${{ env.GHCR_PREFIX }}/$img:latest "$ACR_REG/$ACR_NS/$img:latest"
             docker push "$ACR_REG/$ACR_NS/$img:latest"

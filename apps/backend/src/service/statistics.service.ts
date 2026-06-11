@@ -1,7 +1,7 @@
 import { pageQuery } from '~/common/utils'
 import { Service } from '~/common/decorator/decorator'
 import { copyProperties } from '~/common/utils'
-import { Statistics } from '~/model'
+import { Statistics, Track } from '~/model'
 import BaseService from './base.service'
 import { formatTime } from '~/common/utils/moment'
 import { AuthorModelEntity, AuthorParamsEntity } from '~/entity/statistics.entity'
@@ -32,6 +32,20 @@ const calcLongestConsecutiveTimes = (nums: number[]) => {
 @Service(true)
 export default class StatisticsService extends BaseService {
   statisticsModel = Statistics
+
+  async saveTrack(params: any) {
+    const track = new Track({
+      pageUrl: params.pageUrl || null,
+      eventType: params.eventType || 'pv',
+      eventKey: params.eventKey || null,
+      eventData: params.eventData || null,
+      ip: params.ip || null,
+      userAgent: params.userAgent || null,
+      createTime: Date.now()
+    })
+    await track.save()
+    return null
+  }
 
   async findAuthorList(pageParams: PageParams) {
     if (!pageParams.sortRule) {

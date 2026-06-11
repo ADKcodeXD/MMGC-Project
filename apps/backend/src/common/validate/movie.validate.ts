@@ -56,7 +56,8 @@ export const movieParamsSchema: JSONSchemaType<MovieParams> = {
     expectPlayTime: { type: 'string', nullable: true },
     realPublishTime: { type: 'string', nullable: true },
     authorId: { type: 'integer', nullable: true },
-    authorName: { type: 'string', nullable: true }
+    authorName: { type: 'string', nullable: true },
+    authorAvatar: { type: 'string', nullable: true }
   },
   required: ['movieName', 'movieCover', 'movieDesc', 'moviePlaylink'],
   additionalProperties: false
@@ -119,7 +120,8 @@ export const movieUpdateParamsSchema: JSONSchemaType<MovieUpdateParams> = {
     expectPlayTime: { type: 'string', nullable: true },
     realPublishTime: { type: 'string', nullable: true },
     authorId: { type: 'integer', nullable: true },
-    authorName: { type: 'string', nullable: true }
+    authorName: { type: 'string', nullable: true },
+    authorAvatar: { type: 'string', nullable: true }
   },
   required: ['movieId'],
   additionalProperties: true

@@ -5,6 +5,7 @@ export const configUpdateSchemas: JSONSchemaType<MMGCSysConfig> = {
 	properties: {
 		currentActivityId: { type: 'integer', nullable: true },
 		isVideoPlay: { type: 'boolean', nullable: true },
+		enableWatermark: { type: 'boolean', nullable: true },
 		otherSettings: { type: 'string', nullable: true },
 		skin: { type: 'string', nullable: true },
 		configType: { type: 'integer', nullable: true }

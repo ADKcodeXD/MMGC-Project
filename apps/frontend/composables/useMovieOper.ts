@@ -13,10 +13,12 @@ export const useMovieOperate = () => {
       if (movieItem && movieItem.loginVo.isLike) {
         await cancelVideoLike(movieItem.movieId)
         ElMessage.success(t('cancelLike'))
+        useNuxtApp().$track('unlike_video', { movieId: movieItem.movieId, movieName: movieItem.movieName })
       } else {
         const { data } = await likeVideo(movieItem.movieId)
         if (data?.code === 200) {
           ElMessage.success(t('likeSuccess'))
+          useNuxtApp().$track('like_video', { movieId: movieItem.movieId, movieName: movieItem.movieName })
         }
       }
     } finally {
@@ -38,6 +40,7 @@ export const useMovieOperate = () => {
           if (data?.code === 200 && movieItem.loginVo) {
             movieItem.loginVo && (movieItem.loginVo.isPoll = true)
             ElMessage.success(t('pollSuccess'))
+            useNuxtApp().$track('poll_video', { movieId: movieItem.movieId, movieName: movieItem.movieName })
             if (movieItem.pollNums) movieItem.pollNums += movieItem.loginVo.isPoll ? 1 : -1
           }
         })

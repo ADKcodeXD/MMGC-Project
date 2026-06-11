@@ -26,10 +26,15 @@
               <span>{{ movieItem.viewNums }}</span>
             </div>
           </div>
-          <div class="flex items-center mt-3 flex-shrink-0">
+          <div
+            class="flex items-center mt-3 flex-shrink-0 author-summary"
+            :class="{ 'cursor-pointer': authorBiliLink(movieItem) }"
+            @click.stop="authorBiliLink(movieItem) && openlink(authorBiliLink(movieItem))"
+          >
             <p class="text-light-50 mr-3">{{ $t('author') }}:</p>
-            <MemberPop v-if="movieItem.author" :member-vo="movieItem.author" :size="30" />
-            <p v-else class="text-light-50 break-words">{{ movieItem.authorName }}</p>
+            <img v-if="authorAvatar(movieItem)" :src="authorAvatar(movieItem)" class="author-avatar mr-2" />
+            <MemberPop v-else-if="movieItem.author" :member-vo="movieItem.author" :size="30" />
+            <p class="text-light-50 break-words">{{ authorDisplayName(movieItem) }}</p>
           </div>
         </div>
       </div>
@@ -90,6 +95,9 @@ const { locale } = useCurrentLocale()
 const goToMovieDetail = (movieId: number) => {
   localeNaviGate(`/movie/${movieId}`)
 }
+const authorDisplayName = (movie: MovieVo) => movie.authorName || movie.author?.memberName || ''
+const authorAvatar = (movie: MovieVo) => movie.authorAvatar || movie.author?.avatar || ''
+const authorBiliLink = (movie: MovieVo) => movie.movieLink?.bilibili || ''
 </script>
 <style lang="scss" scoped>
 @media screen and (min-width: 320px) {
@@ -139,6 +147,17 @@ const goToMovieDetail = (movieId: number) => {
         color: $tipColor;
         font-size: $normalFontSize;
         @include showLine(2);
+      }
+      .author-summary {
+        border-radius: 999px;
+        padding: 2px 6px;
+      }
+      .author-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        object-fit: cover;
+        border: 1px solid rgba(255, 255, 255, 0.35);
       }
     }
   }

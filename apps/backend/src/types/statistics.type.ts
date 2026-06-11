@@ -13,4 +13,16 @@ declare module 'Statistics' {
 
   type StatisticsParams = Omit<StatisticsModel, '_id' | 'createTime' | '_v'>
   type StatisticsUpdateParams = Omit<StatisticsModel, 'createTime' | '_v'>
+
+  interface TrackModel {
+    _id: string
+    pageUrl: string | null
+    eventType: string
+    eventKey: string | null
+    eventData: any
+    ip: string | null
+    userAgent: string | null
+    createTime: number
+  }
 }
+

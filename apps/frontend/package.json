@@ -33,6 +33,7 @@
     "element-plus": "2.4.4",
     "global": "^4.4.0",
     "h3": "^1.6.0",
+    "hls.js": "^1.6.16",
     "pinia": "^2.0.22",
     "pinia-plugin-persist": "^1.0.0",
     "plyr": "^3.7.8",

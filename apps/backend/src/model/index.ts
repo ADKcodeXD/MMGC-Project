@@ -9,7 +9,8 @@ import {
 	sponsorSchema,
 	operSchema,
 	commentSchema,
-	statisticsSchema
+	statisticsSchema,
+	trackSchema
 } from './schema'
 
 const Activity = mongoose.model('Activity', activitySchema)
@@ -32,4 +33,7 @@ const Comment = mongoose.model('Comment', commentSchema)
 
 const Statistics = mongoose.model('Statistics', statisticsSchema)
 
-export { Activity, Member, Increment, Movie, Config, Day, Sponsor, Oper, Comment, Statistics }
+const Track = mongoose.model('Track', trackSchema)
+
+export { Activity, Member, Increment, Movie, Config, Day, Sponsor, Oper, Comment, Statistics, Track }
+

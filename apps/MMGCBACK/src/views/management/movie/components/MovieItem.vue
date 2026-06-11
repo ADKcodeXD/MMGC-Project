@@ -1,140 +1,101 @@
 <template>
+  <!-- List/Default Size (Now a vertical card for Grid layout) -->
   <div
-    class="box flex-col sm:flex-row"
+    class="group relative bg-white dark:bg-dark-800 rounded-xl shadow-sm hover:shadow-md border border-gray-200 dark:border-gray-700 transition-all duration-300 overflow-hidden flex flex-col cursor-pointer"
     @click="go(`/management/movie/${movieItem.movieId}`)"
     v-if="size === 'list'"
   >
-    <div class="flex-shrink-0 overflow-hidden w-full sm:w-auto flex justify-center sm:block">
-      <Image :src="movieItem.movieCover" :width="300" :preview="false" class="max-w-full" />
+    <!-- Cover Image -->
+    <div class="relative w-full aspect-video overflow-hidden bg-gray-100 dark:bg-dark-900">
+      <img :src="movieItem.movieCover" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+      <div class="absolute top-2 left-2 flex flex-col gap-1">
+        <Tag color="#040500" v-if="movieItem.isActivityMovie" class="!m-0">MMGC专属</Tag>
+        <Tag color="#f50" v-if="movieItem.isOrigin" class="!m-0">原创</Tag>
+        <Tag color="#005ED6" v-if="movieItem.isPublic" class="!m-0">已公开</Tag>
+        <Tag color="#666666" v-if="!movieItem.isPublic" class="!m-0">未公开</Tag>
+      </div>
     </div>
-    <div class="flex-1 flex flex-col px-4 py-3 justify-between">
-      <div>
-        <div class="mb-2 flex flex-wrap items-center">
-          <p class="font-bold text-xl sm:text-2xl m-0 mr-2">{{ movieItem.movieName.cn }}</p>
-          <div class="flex flex-wrap gap-1 mt-1 sm:mt-0">
-            <Tag color="#040500" v-if="movieItem.isActivityMovie">MMGC-黄金祭专属</Tag>
-            <Tag color="#f50" v-if="movieItem.isOrigin">原创作品</Tag>
-            <Tag color="#005ED6" v-if="movieItem.isPublic">已公开作品</Tag>
-            <Tag color="#666666" v-if="!movieItem.isPublic">未公开作品</Tag>
+    
+    <!-- Content -->
+    <div class="p-3 sm:p-4 flex-1 flex flex-col">
+      <h3 class="font-bold text-lg text-gray-900 dark:text-gray-100 mb-1 line-clamp-2">
+        {{ movieItem.movieName.cn }}
+      </h3>
+      
+      <p class="text-xs text-gray-400 mb-2 line-clamp-1" v-if="movieItem.movieName.jp || movieItem.movieName.en">
+        {{ movieItem.movieName.jp || movieItem.movieName.en }}
+      </p>
+      
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-2 flex-1">
+        {{ movieItem.movieDesc.cn }}
+      </p>
+      
+      <!-- Stats -->
+      <div class="flex flex-wrap gap-x-3 gap-y-2 text-xs text-gray-500 dark:text-gray-400 mb-3">
+        <div class="flex items-center gap-1"><Icon icon="ant-design:like-outlined" /><span>{{ movieItem.likeNums }}</span></div>
+        <div class="flex items-center gap-1"><Icon icon="ant-design:comment-outlined" /><span>{{ movieItem.commentNums }}</span></div>
+        <div class="flex items-center gap-1"><Icon icon="ant-design:profile-outlined" /><span>{{ movieItem.pollNums }}</span></div>
+        <div class="flex items-center gap-1"><Icon icon="ant-design:eye-outlined" /><span>{{ movieItem.viewNums }}</span></div>
+      </div>
+      
+      <!-- Users & Actions -->
+      <div class="pt-3 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center mt-auto">
+        <div class="flex flex-col gap-1 text-xs text-gray-600 dark:text-gray-400">
+          <div class="flex items-center gap-1">
+            <span>UP:</span>
+            <MemberPopover :userInfo="movieItem.uploader" />
+          </div>
+          <div class="flex items-center gap-1">
+            <span>原作者:</span>
+            <MemberPopover :userInfo="movieItem.author" v-if="movieItem.author" />
+            <span v-else>{{ movieItem.authorName }}</span>
           </div>
         </div>
-        <p class="text-xs text-gray-400 mb-1" v-if="movieItem.movieName.jp">
-          日文名:{{ movieItem.movieName.jp }}
-        </p>
-        <p class="text-xs text-gray-400 mb-1" v-if="movieItem.movieName.en">
-          英文名:{{ movieItem.movieName.en }}
-        </p>
-        <p class="break-all">简介:{{ movieItem.movieDesc.cn }}</p>
+        
+        <Popconfirm
+          title="删除视频后将无法恢复！确定？"
+          ok-text="确认"
+          cancel-text="取消"
+          @confirm="confirmDelete"
+          @click.stop=""
+        >
+          <a-button color="error" size="small">删除</a-button>
+        </Popconfirm>
       </div>
-      <div class="flex flex-wrap text-xs text-gray-600 items-center gap-x-4 gap-y-2 mt-2">
-        <div class="flex items-center">
-          <span class="mr-1">上传者:</span>
-          <MemberPopover :userInfo="movieItem.uploader" />
-        </div>
-        <div class="flex items-center">
-          <span class="mr-1">原作者:</span>
-          <MemberPopover :userInfo="movieItem.author" v-if="movieItem.author" />
-          <p v-else class="m-0">{{ movieItem.authorName }}</p>
-        </div>
-        <div class="flex items-center gap-1">
-          <Icon icon="ant-design:like-outlined" class="text-light-500" />
-          <span>{{ movieItem.likeNums }}</span>
-        </div>
-        <div class="flex items-center gap-1">
-          <Icon icon="ant-design:comment-outlined" class="text-light-500" />
-          <span>{{ movieItem.commentNums }}</span>
-        </div>
-        <div class="flex items-center gap-1">
-          <Icon icon="ant-design:profile-outlined" class="text-light-500" />
-          <span>{{ movieItem.pollNums }}</span>
-        </div>
-        <div class="flex items-center gap-1">
-          <Icon icon="ant-design:eye-outlined" class="text-light-500" />
-          <span>{{ movieItem.viewNums }}</span>
-        </div>
-        <div class="hidden sm:block">
-          上传时间:
-          <span>{{ movieItem.createTime }}</span>
-        </div>
-      </div>
-    </div>
-    <div class="px-4 py-2 sm:p-0 flex justify-end items-center sm:pr-4">
-      <Popconfirm
-        title="删除视频后将无法恢复！确定？"
-        ok-text="确认"
-        cancel-text="取消"
-        @confirm="confirmDelete"
-        @click.stop=""
-      >
-        <a-button color="error" class="sm:mt-2">删除视频</a-button>
-      </Popconfirm>
     </div>
   </div>
-  <div v-else class="box2" @click="go(`/management/movie/${movieItem.movieId}`)">
-    <div class="flex-shrink-0 overflow-hidden w-full" style="max-height: 180px">
-      <Image
-        :src="movieItem.movieCover"
-        :preview="false"
-        class="w-full"
-        style="object-fit: cover"
-      />
+
+  <!-- Box Size (Used in Activity editing) -->
+  <div v-else class="group relative bg-white dark:bg-dark-800 rounded-xl shadow-sm hover:shadow-md border border-gray-200 dark:border-gray-700 transition-all duration-300 overflow-hidden flex flex-col cursor-pointer min-w-[240px]" @click="go(`/management/movie/${movieItem.movieId}`)">
+    <div class="relative w-full aspect-video overflow-hidden bg-gray-100 dark:bg-dark-900">
+      <img :src="movieItem.movieCover" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+      <div class="absolute top-0 right-0 w-8 h-8 bg-red-500/80 hover:bg-red-600 text-white flex items-center justify-center cursor-pointer rounded-bl-lg transition-colors z-10" @click.stop="clearDay">
+        <Icon icon="ant-design:close-outlined" :size="16" />
+      </div>
     </div>
-    <div class="flex-1 flex flex-col px-4 py-1 justify-between">
-      <div class="clearday" @click.stop="clearDay">
-        <Icon icon="ant-design:close-circle-filled" :size="24" />
-      </div>
-      <div>
-        <div class="mb-1 flex items-center">
-          <p class="font-bold text-xl m-0 mr-2">{{ movieItem.movieName.cn }}</p>
-        </div>
-        <p class="text-xs text-gray-400 mb-1" v-if="movieItem.movieName.jp">
-          日文名:{{ movieItem.movieName.jp }}
-        </p>
-        <p class="text-xs text-gray-400 mb-1" v-if="movieItem.movieName.en">
-          英文名:{{ movieItem.movieName.en }}
-        </p>
-        <p class="break-all maxline">简介:{{ movieItem.movieDesc.cn }}</p>
-      </div>
-      <div class="flex text-xs text-gray-600 items-center">
-        <div class="mr-2">
-          上传者:
+    
+    <div class="p-3 flex-1 flex flex-col">
+      <h3 class="font-bold text-base text-gray-900 dark:text-gray-100 mb-1 line-clamp-1">
+        {{ movieItem.movieName.cn }}
+      </h3>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-2 line-clamp-2 flex-1">
+        {{ movieItem.movieDesc.cn }}
+      </p>
+      
+      <div class="flex justify-between items-center text-xs text-gray-500">
+        <div class="flex items-center gap-2">
           <MemberPopover :userInfo="movieItem.uploader" />
         </div>
-        <div class="mx-2">
-          原作者:
-          <MemberPopover :userInfo="movieItem.author" v-if="movieItem.author" />
-          <p v-else>{{ movieItem.authorName }}</p>
-        </div>
-      </div>
-      <div class="flex text-xs text-gray-600 items-center">
-        <div>
-          <Icon icon="ant-design:like-outlined" class="text-light-500" />
-          <span>{{ movieItem.likeNums }}</span>
-        </div>
-        <div class="mx-2">
-          <Icon icon="ant-design:comment-outlined" class="text-light-500" />
-          <span>{{ movieItem.commentNums }}</span>
-        </div>
-        <div class="mx-2">
-          <Icon icon="ant-design:profile-outlined" class="text-light-500" />
-          <span>{{ movieItem.pollNums }}</span>
-        </div>
-        <div class="mx-2">
-          <Icon icon="ant-design:eye-outlined" class="text-light-500" />
-          <span>{{ movieItem.viewNums }}</span>
-        </div>
-      </div>
-      <div class="flex text-xs text-gray-600 items-center">
-        <div>
-          上传时间:
-          <span>{{ movieItem.createTime }}</span>
+        <div class="flex gap-2">
+          <div class="flex items-center gap-1"><Icon icon="ant-design:like-outlined" /><span>{{ movieItem.likeNums }}</span></div>
+          <div class="flex items-center gap-1"><Icon icon="ant-design:eye-outlined" /><span>{{ movieItem.viewNums }}</span></div>
         </div>
       </div>
     </div>
   </div>
 </template>
 <script lang="ts" setup>
-  import { Image, Tag, Popconfirm } from 'ant-design-vue'
+  import { Tag, Popconfirm } from 'ant-design-vue'
   import { MovieVo } from '/@/api/movie/model/movieEntity'
   import { MemberPopover } from '/@/components/MemberPopover'
   import { Icon } from '/@/components/Icon'
@@ -166,72 +127,6 @@
     emit('confirmDelete')
   }
 </script>
-
-<style lang="less" scoped>
-  .box {
-    display: flex;
-    justify-content: space-between;
-    margin: 8px;
-    border: 1px solid rgb(240, 157, 157);
-    background-color: white;
-    overflow: hidden;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: all 0.4s ease;
-
-    @media (max-width: 640px) {
-      margin: 8px 0;
-      border-radius: 0;
-      border-left: none;
-      border-right: none;
-    }
-
-    &:hover {
-      transform: translateY(-10px);
-      overflow: auto;
-      box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
-    }
-  }
-
-  .maxline {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 5; /* 限制为五行 */
-    overflow: hidden;
-  }
-
-  .box2 {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    justify-content: flex-start;
-    position: relative;
-    border-radius: 5px;
-    border: 1px solid rgb(240, 157, 157);
-    cursor: pointer;
-    background-color: white;
-    min-width: 280px;
-    min-height: 360px;
-    overflow: hidden;
-    transition: all 0.4s ease;
-
-    &:hover {
-      transform: translateY(-10px);
-      overflow: auto;
-      box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.4);
-    }
-
-    .clearday {
-      position: absolute;
-      width: 30px;
-      height: 30px;
-      top: 0;
-      right: 0;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: rgba(1, 40, 75, 0.199);
-    }
-  }
+<style scoped>
+/* Tailwind classes handle the layout */
 </style>

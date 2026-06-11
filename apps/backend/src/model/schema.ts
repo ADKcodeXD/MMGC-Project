@@ -207,3 +207,17 @@ export const statisticsSchema = new mongoose.Schema<StatisticsModel>(
   },
   { collection: 'statistics' }
 )
+
+export const trackSchema = new mongoose.Schema(
+  {
+    pageUrl: { type: String, default: null },
+    eventType: { type: String, default: 'pv' },
+    eventKey: { type: String, default: null },
+    eventData: { type: mongoose.Schema.Types.Mixed, default: null },
+    ip: { type: String, default: null },
+    userAgent: { type: String, default: null },
+    createTime: { type: Number, default: Date.now }
+  },
+  { collection: 'tracks' }
+)
+

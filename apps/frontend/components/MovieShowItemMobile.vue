@@ -24,6 +24,7 @@
         v-if="movieItem.moviePlaylink"
         :video-url="movieItem.moviePlaylink"
         :cover="movieItem.movieCover"
+        @on-play="onPlayTrack"
       />
       <div v-else class="w-full h-full">
         <MyCustomImage :img="movieItem.movieCover"></MyCustomImage>
@@ -103,19 +104,19 @@
       <div>
         <p v-if="dayPollLink?.bilibili">
           <Icon name="ri:bilibili-line" size="20" class="mr-2" />{{ $t('bilibiliPoll') }}
-          <a :href="dayPollLink?.bilibili" target="_blank" style="color: #abf7ff">{{
+          <a :href="dayPollLink?.bilibili" target="_blank" style="color: #abf7ff" @click="$track('click_external_poll', { platform: 'bilibili', url: dayPollLink?.bilibili, movieId: movieItem.movieId })">{{
             $t('clickJump')
           }}</a>
         </p>
         <p v-if="dayPollLink?.twitter" class="my-4">
           <Icon name="ri:twitter-x-line" size="20" class="mr-2" />{{ $t('pollTwitter') }}
-          <a :href="dayPollLink?.twitter" target="_blank" style="color: #abf7ff">{{
+          <a :href="dayPollLink?.twitter" target="_blank" style="color: #abf7ff" @click="$track('click_external_poll', { platform: 'twitter', url: dayPollLink?.twitter, movieId: movieItem.movieId })">{{
             $t('clickJump')
           }}</a>
         </p>
         <p v-if="dayPollLink?.personalWebsite" class="my-4">
           <Icon name="ri:twitter-x-line" size="20" class="mr-2" />{{ $t('pollByCustom') }}
-          <a :href="dayPollLink?.personalWebsite" target="_blank" style="color: #abf7ff">{{
+          <a :href="dayPollLink?.personalWebsite" target="_blank" style="color: #abf7ff" @click="$track('click_external_poll', { platform: 'personalWebsite', url: dayPollLink?.personalWebsite, movieId: movieItem.movieId })">{{
             $t('clickJump')
           }}</a>
         </p>
@@ -131,6 +132,7 @@ import { useGlobalStore } from '~~/stores/global'
 
 const route = useRoute()
 const globalStore = useGlobalStore()
+const { $track } = useNuxtApp()
 
 const props = defineProps<{
   movieItem: MovieVo | any
@@ -145,6 +147,10 @@ const pollByLink = (movie: MovieVo, dayPollLink?: Sns | null) => {
   } else {
     pollMovie(movie)
   }
+}
+
+const onPlayTrack = () => {
+  $track('play_video', { movieId: props.movieItem.movieId, movieName: props.movieItem.movieName })
 }
 
 const { locale } = useCurrentLocale()
@@ -221,6 +227,7 @@ const copyShareLink = async () => {
   if (!shareUrl.value) return
   await navigator.clipboard.writeText(shareUrl.value)
   ElMessage.success(shareText.value.copied)
+  $track('copy_share_link', { movieId: props.movieItem.movieId, movieName: props.movieItem.movieName })
 }
 
 const loadCanvasImage = async (src: string): Promise<HTMLImageElement | null> => {
@@ -496,6 +503,7 @@ const generatePoster = async () => {
 
   try {
     posterDataUrl.value = canvas.toDataURL('image/png')
+    $track('generate_poster', { movieId: props.movieItem.movieId, movieName: props.movieItem.movieName })
   } catch (error) {
     console.error('Poster toDataURL failed (tainted canvas):', error)
     ElMessage.error(shareText.value.posterFailed)
@@ -508,6 +516,7 @@ const downloadPoster = () => {
   link.href = posterDataUrl.value
   link.download = `MMGC-${activityYear.value}-Day-${props.movieItem.day || route.query.day || ''}-${props.movieItem.movieId}.png`
   link.click()
+  $track('download_poster', { movieId: props.movieItem.movieId, movieName: props.movieItem.movieName })
 }
 </script>
 
