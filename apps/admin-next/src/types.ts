@@ -100,6 +100,29 @@ export type MovieVo = {
   createTime?: string
 }
 
+export type BillingDetails = {
+  standardStorageGB: number
+  avgStandardStorageGB: number
+  standardStorageCost: number
+  lowFreqStorageGB: number
+  avgLowFreqStorageGB: number
+  lowFreqStorageCost: number
+  lowFreqRetrievalGB: number
+  lowFreqRetrievalCost: number
+  standardCdnBackToOriginGB: number
+  standardCdnBackToOriginCost: number
+  lowFreqCdnBackToOriginGB: number
+  lowFreqCdnBackToOriginCost: number
+  chinaTrafficGB: number
+  chinaTrafficCost: number
+  asiaTrafficGB: number
+  asiaTrafficCost: number
+  euNaTrafficGB: number
+  euNaTrafficCost: number
+  trafficPackageCost: number
+  totalCost: number
+}
+
 export type DashboardOverviewData = {
   totalTrafficGB: number
   chinaTrafficGB?: number
@@ -113,7 +136,9 @@ export type DashboardOverviewData = {
   chinaPeakBandwidthMbps?: number
   overseaPeakBandwidthMbps?: number
   dailyStats?: SiteTrafficItem[]
+  billing?: BillingDetails
 }
+
 
 export type SiteTrafficItem = {
   date: string

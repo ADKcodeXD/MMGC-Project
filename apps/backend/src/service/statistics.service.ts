@@ -292,17 +292,33 @@ export default class StatisticsService extends BaseService {
       peakBandwidthMbps: 0,
       chinaPeakBandwidthMbps: 0,
       overseaPeakBandwidthMbps: 0,
-      dailyStats: [] as any[]
+      dailyStats: [] as any[],
+      billing: {
+        standardStorageGB: 0,
+        avgStandardStorageGB: 0,
+        standardStorageCost: 0,
+        lowFreqStorageGB: 0,
+        avgLowFreqStorageGB: 0,
+        lowFreqStorageCost: 0,
+        lowFreqRetrievalGB: 0,
+        lowFreqRetrievalCost: 0,
+        standardCdnBackToOriginGB: 0,
+        standardCdnBackToOriginCost: 0,
+        lowFreqCdnBackToOriginGB: 0,
+        lowFreqCdnBackToOriginCost: 0,
+        chinaTrafficGB: 0,
+        chinaTrafficCost: 0,
+        asiaTrafficGB: 0,
+        asiaTrafficCost: 0,
+        euNaTrafficGB: 0,
+        euNaTrafficCost: 0,
+        trafficPackageCost: 16.00,
+        totalCost: 16.00
+      }
     }
     if (!accessKey || !secretKey) {
       return defaultRes
     }
-
-    const cdnLink = config.QINIU_CDN_LINK || ''
-    let cdnDomain = ''
-    try {
-      cdnDomain = new URL(cdnLink).hostname
-    } catch (e) { /* empty */ }
 
     const mac = new qiniu.auth.digest.Mac(accessKey, secretKey)
 
@@ -335,49 +351,163 @@ export default class StatisticsService extends BaseService {
     const overseaTrafficGB = Number(totalOverseaFluxGB.toFixed(4))
     const totalTrafficGB = Number((chinaTrafficGB + overseaTrafficGB).toFixed(4))
 
-    const estimatedChinaTrafficCost = Number((chinaTrafficGB * 0.15).toFixed(2))
-    const estimatedOverseaTrafficCost = Number((overseaTrafficGB * 0.15).toFixed(2))
-    const estimatedTrafficCost = Number((estimatedChinaTrafficCost + estimatedOverseaTrafficCost).toFixed(2))
-
-    // 2. Fetch Storage Size
-    let currentStorageGB = 0
+    // 2. Fetch Storage Size & Details from Kodo APIs
     const bucket = config.QINIU_BUCKET || ''
-    if (bucket) {
-      try {
-        const spaceBegin = dayjs().subtract(1, 'day').format('YYYYMMDD000000')
-        const spaceEnd = dayjs().format('YYYYMMDD235959')
-        const spaceUrl = `https://api.qiniuapi.com/v6/space?bucket=${bucket}&begin=${spaceBegin}&end=${spaceEnd}&g=day`
-        const spaceToken = qiniu.util.generateAccessToken(mac, spaceUrl, undefined)
-        const spaceAuthHeader = spaceToken.replace('QBox ', 'Qiniu ')
+    const spaceBegin = dayjs().subtract(days - 1, 'day').format('YYYYMMDD000000')
+    const spaceEnd = dayjs().format('YYYYMMDD235959')
 
-        const res = await axios.get(spaceUrl, {
-          headers: {
-            Authorization: spaceAuthHeader
-          }
-        })
+    const qiniuHeaders = (url: string) => {
+      const token = qiniu.util.generateAccessToken(mac, url, undefined)
+      const authHeader = token.replace('QBox ', 'Qiniu ')
+      return { Authorization: authHeader }
+    }
+
+    let standardStorageGB = 0
+    let avgStandardStorageGB = 0
+    let lowFreqStorageGB = 0
+    let avgLowFreqStorageGB = 0
+    let standardCdnBackToOriginGB = 0
+    let lowFreqCdnBackToOriginGB = 0
+    let lowFreqRetrievalGB = 0
+
+    if (bucket) {
+      // 2.1 Standard Storage
+      try {
+        const url = `https://api.qiniuapi.com/v6/space?bucket=${bucket}&begin=${spaceBegin}&end=${spaceEnd}&g=day`
+        const res = await axios.get(url, { headers: qiniuHeaders(url) })
         const datas = res.data?.datas || []
-        const lastSize = datas.length > 0 ? datas[datas.length - 1] : 0
-        currentStorageGB = Number((lastSize / 1024 / 1024 / 1024).toFixed(4))
+        if (datas.length > 0) {
+          const sum = datas.reduce((acc: number, val: number) => acc + val, 0)
+          avgStandardStorageGB = (sum / datas.length) / 1024 / 1024 / 1024
+          standardStorageGB = datas[datas.length - 1] / 1024 / 1024 / 1024
+        }
       } catch (err: any) {
-        console.error('Failed to fetch Qiniu space statistics:', err?.response?.data || err?.message)
+        console.error('Failed to fetch standard storage space:', err?.response?.data || err?.message)
+      }
+
+      // 2.2 Low-Frequency Storage
+      try {
+        const url = `https://api.qiniuapi.com/v6/space_line?bucket=${bucket}&begin=${spaceBegin}&end=${spaceEnd}&g=day`
+        const res = await axios.get(url, { headers: qiniuHeaders(url) })
+        const datas = res.data?.datas || []
+        if (datas.length > 0) {
+          const sum = datas.reduce((acc: number, val: number) => acc + val, 0)
+          avgLowFreqStorageGB = (sum / datas.length) / 1024 / 1024 / 1024
+          lowFreqStorageGB = datas[datas.length - 1] / 1024 / 1024 / 1024
+        }
+      } catch (err: any) {
+        console.error('Failed to fetch low-frequency storage space:', err?.response?.data || err?.message)
+      }
+
+      // 2.3 Standard Storage CDN Back-to-Origin
+      try {
+        const url = `https://api.qiniuapi.com/v6/blob_io?bucket=${bucket}&begin=${spaceBegin}&end=${spaceEnd}&g=day&select=flow&$metric=cdn_flow_out&$ftype=0`
+        const res = await axios.get(url, { headers: qiniuHeaders(url) })
+        const list = res.data || []
+        const totalBytes = list.reduce((acc: number, item: any) => acc + (item?.values?.flow || 0), 0)
+        standardCdnBackToOriginGB = totalBytes / 1024 / 1024 / 1024
+      } catch (err: any) {
+        console.error('Failed to fetch standard CDN back-to-origin:', err?.response?.data || err?.message)
+      }
+
+      // 2.4 Low-Frequency Storage CDN Back-to-Origin
+      try {
+        const url = `https://api.qiniuapi.com/v6/blob_io?bucket=${bucket}&begin=${spaceBegin}&end=${spaceEnd}&g=day&select=flow&$metric=cdn_flow_out&$ftype=1`
+        const res = await axios.get(url, { headers: qiniuHeaders(url) })
+        const list = res.data || []
+        const totalBytes = list.reduce((acc: number, item: any) => acc + (item?.values?.flow || 0), 0)
+        lowFreqCdnBackToOriginGB = totalBytes / 1024 / 1024 / 1024
+      } catch (err: any) {
+        console.error('Failed to fetch low-frequency CDN back-to-origin:', err?.response?.data || err?.message)
+      }
+
+      // 2.5 Low-Frequency Data Retrieval
+      try {
+        const url = `https://api.qiniuapi.com/v6/blob_io?bucket=${bucket}&begin=${spaceBegin}&end=${spaceEnd}&g=day&select=flow&$metric=flow_out&$ftype=1`
+        const res = await axios.get(url, { headers: qiniuHeaders(url) })
+        const list = res.data || []
+        const totalBytes = list.reduce((acc: number, item: any) => acc + (item?.values?.flow || 0), 0)
+        lowFreqRetrievalGB = totalBytes / 1024 / 1024 / 1024
+      } catch (err: any) {
+        console.error('Failed to fetch low-frequency data retrieval:', err?.response?.data || err?.message)
       }
     }
 
-    const estimatedStorageCost = Number((currentStorageGB * 0.10).toFixed(2))
+    // 3. Billing Recalculations
+    // 3.1 Storage Costs (存储费用)
+    // - Standard Storage Space: ￥0.115/GB/month. Free quota: 10 GB.
+    const standardStorageCost = Number((Math.max(0, avgStandardStorageGB - 10) * 0.115 * (days / 30)).toFixed(2))
+    // - Low-frequency Storage Space: ￥0.075/GB/month.
+    const lowFreqStorageCost = Number((avgLowFreqStorageGB * 0.075 * (days / 30)).toFixed(2))
+    // - Low-frequency Data Retrieval: ￥0.03/GB.
+    const lowFreqRetrievalCost = Number((lowFreqRetrievalGB * 0.03).toFixed(2))
+
+    // 3.2 CDN Back-to-Origin Costs (回源流量费)
+    // - Standard Storage CDN Back-to-Origin Traffic: ￥0.15/GB. Free quota: 10 GB.
+    const standardCdnBackToOriginCost = Number((Math.max(0, standardCdnBackToOriginGB - 10) * 0.15).toFixed(2))
+    // - Low-frequency Storage CDN Back-to-Origin Traffic: ￥0.15/GB.
+    const lowFreqCdnBackToOriginCost = Number((lowFreqCdnBackToOriginGB * 0.15).toFixed(2))
+
+    // 3.3 CDN HTTPS Outbound Traffic Costs (下行流量费)
+    // - CDN HTTPS Domestic (China): ￥0.28 / GB.
+    const chinaTrafficCost = Number((chinaTrafficGB * 0.28).toFixed(2))
+    // - Oversea traffic is split into: Asia (48% at ￥0.60/GB) and EU/NA (52% at ￥0.40/GB)
+    const asiaTrafficGB = overseaTrafficGB * 0.48
+    const euNaTrafficGB = overseaTrafficGB * 0.52
+    const asiaTrafficCost = Number((asiaTrafficGB * 0.60).toFixed(2))
+    const euNaTrafficCost = Number((euNaTrafficGB * 0.40).toFixed(2))
+    const overseaTrafficCost = Number((asiaTrafficCost + euNaTrafficCost).toFixed(2))
+
+    // 3.4 CDN universal traffic package (fixed purchased cost)
+    const trafficPackageCost = 16.00
+
+    const totalCost = Number((
+      standardStorageCost +
+      lowFreqStorageCost +
+      lowFreqRetrievalCost +
+      standardCdnBackToOriginCost +
+      lowFreqCdnBackToOriginCost +
+      chinaTrafficCost +
+      asiaTrafficCost +
+      euNaTrafficCost +
+      trafficPackageCost
+    ).toFixed(2))
 
     return {
       totalTrafficGB,
       chinaTrafficGB,
       overseaTrafficGB,
-      estimatedTrafficCost,
-      estimatedChinaTrafficCost,
-      estimatedOverseaTrafficCost,
-      currentStorageGB,
-      estimatedStorageCost,
+      estimatedTrafficCost: Number((chinaTrafficCost + overseaTrafficCost).toFixed(2)),
+      estimatedChinaTrafficCost: chinaTrafficCost,
+      estimatedOverseaTrafficCost: overseaTrafficCost,
+      currentStorageGB: Number(standardStorageGB.toFixed(4)),
+      estimatedStorageCost: Number((standardStorageCost + lowFreqStorageCost).toFixed(2)),
       peakBandwidthMbps: Number(peakBandwidthMbps.toFixed(4)),
       chinaPeakBandwidthMbps: Number(chinaPeakBandwidthMbps.toFixed(4)),
       overseaPeakBandwidthMbps: Number(overseaPeakBandwidthMbps.toFixed(4)),
-      dailyStats
+      dailyStats,
+      billing: {
+        standardStorageGB: Number(standardStorageGB.toFixed(4)),
+        avgStandardStorageGB: Number(avgStandardStorageGB.toFixed(4)),
+        standardStorageCost,
+        lowFreqStorageGB: Number(lowFreqStorageGB.toFixed(4)),
+        avgLowFreqStorageGB: Number(avgLowFreqStorageGB.toFixed(4)),
+        lowFreqStorageCost,
+        lowFreqRetrievalGB: Number(lowFreqRetrievalGB.toFixed(4)),
+        lowFreqRetrievalCost,
+        standardCdnBackToOriginGB: Number(standardCdnBackToOriginGB.toFixed(4)),
+        standardCdnBackToOriginCost,
+        lowFreqCdnBackToOriginGB: Number(lowFreqCdnBackToOriginGB.toFixed(4)),
+        lowFreqCdnBackToOriginCost,
+        chinaTrafficGB,
+        chinaTrafficCost,
+        asiaTrafficGB: Number(asiaTrafficGB.toFixed(4)),
+        asiaTrafficCost,
+        euNaTrafficGB: Number(euNaTrafficGB.toFixed(4)),
+        euNaTrafficCost,
+        trafficPackageCost,
+        totalCost
+      }
     }
   }
 }
