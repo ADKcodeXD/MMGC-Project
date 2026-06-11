@@ -77,4 +77,17 @@ export default class StatisticsController {
     const res = await this.statisticsService.getDashboardOverview(days ? parseInt(days) : 7)
     return Result.success(res)
   }
+
+  @GetMapping('/trackOverview')
+  async getTrackOverview(@Query('days') days?: string) {
+    const res = await this.statisticsService.getTrackOverview(days ? parseInt(days) : 7)
+    return Result.success(res)
+  }
+
+  @GetMapping('/sitemapOverview')
+  @Auth([ROLE.ADMIN, ROLE.SUBADMIN, ROLE.COMMITTER, ROLE.GROUPMEMBER], '/sitemapOverview')
+  async getSitemapOverview() {
+    const res = await this.statisticsService.getSitemapOverview()
+    return Result.success(res)
+  }
 }

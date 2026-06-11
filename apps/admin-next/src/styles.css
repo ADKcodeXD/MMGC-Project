@@ -8,6 +8,14 @@ body {
   color: #1f2937;
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+}
+
 .app-shell {
   height: 100vh;
   overflow: hidden;
@@ -80,6 +88,8 @@ body {
 }
 
 .page {
+  width: 100%;
+  min-width: 0;
   max-width: 1440px;
   margin: 0 auto;
 }
@@ -90,6 +100,16 @@ body {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 16px;
+}
+
+.page-heading > * {
+  min-width: 0;
+}
+
+.page-heading > .ant-space {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 100%;
 }
 
 .page-heading h1 {
@@ -105,6 +125,65 @@ body {
 
 .section-row {
   margin-top: 16px;
+}
+
+.ant-layout,
+.ant-layout-content,
+.ant-card,
+.ant-card-body,
+.ant-tabs,
+.ant-tabs-content,
+.ant-tabs-tabpane,
+.ant-row,
+.ant-col,
+.ant-form,
+.ant-space,
+.ant-statistic {
+  min-width: 0;
+}
+
+.ant-card {
+  border-radius: 8px;
+}
+
+.ant-card-body {
+  overflow-wrap: anywhere;
+}
+
+.ant-table-wrapper {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.ant-table-cell {
+  overflow-wrap: anywhere;
+}
+
+.ant-tabs-nav {
+  margin-bottom: 12px;
+}
+
+.ant-tabs-nav-wrap {
+  min-width: 0;
+}
+
+.ant-modal,
+.ant-drawer-content-wrapper {
+  max-width: 100vw;
+}
+
+.floating-actions {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 220px;
+  z-index: 100;
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 14px 24px;
+  background: #fff;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
 }
 
 .metric-line {
@@ -151,6 +230,14 @@ body {
 
 .filter-card {
   margin-bottom: 16px;
+}
+
+.filter-card .ant-space {
+  width: 100%;
+}
+
+.filter-card .ant-space-item {
+  min-width: 0;
 }
 
 .filter-select {
@@ -423,8 +510,48 @@ body {
     flex-direction: column;
   }
 
+  .page-heading > .ant-space,
+  .page-heading > .ant-btn,
+  .page-heading .search-box {
+    width: 100%;
+  }
+
+  .page-heading > .ant-space .ant-space-item {
+    min-width: 0;
+  }
+
+  .page-heading > .ant-space .ant-btn,
+  .page-heading > .ant-btn {
+    width: 100%;
+  }
+
+  .page-heading > .ant-space .ant-select,
+  .page-heading > .ant-space .ant-space-compact,
+  .page-heading > .ant-space .ant-input-search {
+    width: 100% !important;
+  }
+
   .topbar-subtitle {
     display: none;
+  }
+
+  .topbar {
+    padding: 0 12px;
+  }
+
+  .header-user {
+    gap: 4px;
+  }
+
+  .header-username,
+  .header-user .ant-tag {
+    display: none;
+  }
+
+  .floating-actions {
+    left: 0;
+    padding: 12px 14px;
+    gap: 10px;
   }
 
   .filter-select,
@@ -432,8 +559,61 @@ body {
     width: 100%;
   }
 
+  .filter-card .ant-space-item {
+    width: 100%;
+  }
+
+  .filter-card .ant-btn {
+    width: 100%;
+  }
+
+  .filter-card .ant-select,
+  .filter-card .ant-input-search,
+  .filter-card .ant-space-compact {
+    width: 100% !important;
+  }
+
+  .ant-picker,
+  .ant-input-number,
+  .ant-select,
+  .ant-input-search,
+  .ant-space-compact {
+    max-width: 100%;
+  }
+
+  .ant-table {
+    font-size: 13px;
+  }
+
+  .ant-pagination {
+    justify-content: flex-start;
+  }
+
   .sponsor-detail-grid {
     grid-template-columns: 1fr;
+  }
+
+  .movie-picker-drawer .ant-drawer-body {
+    overflow: auto !important;
+  }
+
+  .movie-picker-layout {
+    height: auto !important;
+    min-height: 100%;
+  }
+
+  .movie-picker-layout > .ant-col {
+    height: auto !important;
+    min-height: 40dvh;
+  }
+
+  .movie-picker-layout > .ant-col:first-child {
+    border-right: 0 !important;
+    border-bottom: 1px solid #eef0f4;
+  }
+
+  .movie-picker-layout .ant-input-search {
+    width: 100% !important;
   }
 
   .movie-row {
@@ -457,8 +637,56 @@ body {
 }
 
 @media (max-width: 560px) {
+  .content {
+    padding: 10px;
+  }
+
   .page-heading h1 {
     font-size: 21px;
+  }
+
+  .page-heading p {
+    font-size: 13px;
+  }
+
+  .ant-card-body {
+    padding: 12px !important;
+  }
+
+  .ant-card-head {
+    padding: 0 12px !important;
+  }
+
+  .ant-card-head-title {
+    white-space: normal;
+  }
+
+  .ant-statistic-title {
+    min-height: 36px;
+    font-size: 12px;
+  }
+
+  .ant-statistic-content {
+    font-size: 22px;
+  }
+
+  .ant-tabs-tab {
+    padding: 8px 0;
+  }
+
+  .ant-pagination-options,
+  .ant-pagination-total-text {
+    display: none !important;
+  }
+
+  .floating-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .floating-actions .ant-btn {
+    width: 100%;
+    min-width: 0 !important;
   }
 
   .sortable-item {

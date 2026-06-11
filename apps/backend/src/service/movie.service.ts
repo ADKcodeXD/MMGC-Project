@@ -140,11 +140,17 @@ export default class MovieService extends BaseService {
   }
 
   async getMovieByActivityId(params: { activityId: number; day?: number; ip?: string }): Promise<PageResult<MovieVo>> {
-    const filters = aggreFilter({
-      activityId: parseInt(params.activityId.toString()),
-      day: params.day ? parseInt(params.day?.toString()) : undefined
-    })
-    const movieList = (await this.movieModel.aggregate(filters)) as MovieModel[]
+    const filter: any = {
+      activityId: parseInt(params.activityId.toString())
+    }
+    if (params.day) {
+      filter.day = parseInt(params.day.toString())
+    }
+    const filters = aggreFilter(filter)
+    const movieList = (await this.movieModel.aggregate([
+      ...filters,
+      { $sort: { sortIndex: 1, movieId: 1 } }
+    ])) as MovieModel[]
 
     if (movieList) {
       const movieVoList = await this.copyToVoList<MovieModel, MovieVo>(movieList, params.ip, false, 'dynamic')
@@ -242,6 +248,11 @@ export default class MovieService extends BaseService {
       if (movieParams.day) {
         _filter.day = parseInt(movieParams.day.toString())
       }
+    }
+
+    if (_filter.activityId && _filter.day && !movieParams.sortRule) {
+      movieParams.sortRule = 'sortIndex movieId'
+      movieParams.orderRule = 'reverse'
     }
 
     const res = await pageQuery(movieParams, this.movieModel, aggreFilter(_filter, _additionFields))

@@ -8,7 +8,6 @@ import {
   PayCircleOutlined,
   TableOutlined,
   PieChartOutlined,
-  WalletOutlined,
   CheckCircleOutlined,
   InfoCircleOutlined,
   LineChartOutlined
@@ -153,8 +152,8 @@ export default function Dashboard() {
     asiaTrafficCost: 0,
     euNaTrafficGB: 0,
     euNaTrafficCost: 0,
-    trafficPackageCost: 16.00,
-    totalCost: 16.00
+    trafficPackageCost: 0,
+    totalCost: 0
   }
 
   const billingDetails = [
@@ -237,16 +236,6 @@ export default function Dashboard() {
       unitPrice: '￥0.400/GB (阶梯 0-10TB)',
       period: billingPeriod,
       amount: billing.euNaTrafficCost
-    },
-    {
-      key: '9',
-      item: 'CDN下行通用流量包 (100GB全时段/1年)',
-      category: '预付费资源包',
-      usage: '100.00 GB',
-      freeQuota: '0.0000 GB',
-      unitPrice: '￥16.00/次 (原价 ￥22)',
-      period: '生效于 2026-06-01',
-      amount: billing.trafficPackageCost
     }
   ]
 
@@ -265,7 +254,6 @@ export default function Dashboard() {
         let color = 'blue'
         if (category === '存储空间') color = 'purple'
         if (category === 'CDN回源流量') color = 'orange'
-        if (category === '预付费资源包') color = 'cyan'
         return <Tag color={color}>{category}</Tag>
       }
     },
@@ -315,8 +303,7 @@ export default function Dashboard() {
           { value: Number((billing.standardCdnBackToOriginCost + billing.lowFreqCdnBackToOriginCost).toFixed(2)), name: 'CDN回源流量', itemStyle: { color: '#facc14' } },
           { value: billing.chinaTrafficCost, name: '大陆HTTPS下行', itemStyle: { color: '#722ed1' } },
           { value: billing.asiaTrafficCost, name: '亚洲HTTPS下行', itemStyle: { color: '#f04864' } },
-          { value: billing.euNaTrafficCost, name: '欧美HTTPS下行', itemStyle: { color: '#8543e0' } },
-          { value: billing.trafficPackageCost, name: '已购CDN流量包', itemStyle: { color: '#13c2c2' } }
+          { value: billing.euNaTrafficCost, name: '欧美HTTPS下行', itemStyle: { color: '#8543e0' } }
         ]
       }
     ]
@@ -327,7 +314,7 @@ export default function Dashboard() {
     grid: { left: '10%', right: '10%', bottom: '20%', top: '15%' },
     xAxis: {
       type: 'category',
-      data: ['标准存储', '低频存储', '低频取回', '标准回源', '低频回源', '大陆下行', '亚洲下行', '欧美下行', '下行流量包'],
+      data: ['标准存储', '低频存储', '低频取回', '标准回源', '低频回源', '大陆下行', '亚洲下行', '欧美下行'],
       axisLabel: { interval: 0, rotate: 25 }
     },
     yAxis: { type: 'value', name: '用量 (GB)' },
@@ -344,12 +331,11 @@ export default function Dashboard() {
           billing.lowFreqCdnBackToOriginGB,
           billing.chinaTrafficGB,
           billing.asiaTrafficGB,
-          billing.euNaTrafficGB,
-          100.00
+          billing.euNaTrafficGB
         ],
         itemStyle: {
           color: (params: any) => {
-            const colors = ['#1890ff', '#2fc25b', '#2fefe8', '#facc14', '#fa8c16', '#722ed1', '#f04864', '#8543e0', '#34395e']
+            const colors = ['#1890ff', '#2fc25b', '#2fefe8', '#facc14', '#fa8c16', '#722ed1', '#f04864', '#8543e0']
             return colors[params.dataIndex]
           }
         }
@@ -526,7 +512,7 @@ export default function Dashboard() {
                   }
                   description={
                     <div>
-                      账单包含周期性实际使用费 <strong>￥{(billing.totalCost - billing.trafficPackageCost).toFixed(2)}</strong>，以及本期新购 CDN 下行通用流量资源包 <strong>￥{billing.trafficPackageCost.toFixed(2)}</strong>（节省 ￥6.00）。
+                      本页只按实际用量和阶梯单价估算费用，不计入已购资源包、余额抵扣、优惠券或账单折扣。
                     </div>
                   }
                   type="info"
@@ -546,7 +532,7 @@ export default function Dashboard() {
                         valueStyle={{ color: '#cf1322', fontWeight: 'bold' }}
                       />
                       <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 4 }}>
-                        包含：使用费 ￥{(billing.totalCost - billing.trafficPackageCost).toFixed(2)} + 资源包 ￥{billing.trafficPackageCost.toFixed(2)}
+                        纯用量估算，不含资源包与抵扣
                       </div>
                     </Card>
                   </Col>
@@ -685,25 +671,20 @@ export default function Dashboard() {
                     </Card>
                   </Col>
                   <Col xs={24} md={8}>
-                    <Card title="预付费资源包收益分析" style={{ height: '100%' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 16 }}>
-                        <WalletOutlined style={{ fontSize: 32, color: '#13c2c2', marginRight: 12 }} />
-                        <div>
-                          <strong>CDN下行通用流量包 (100GB)</strong>
-                          <div style={{ fontSize: 12, color: '#8c8c8c' }}>有效期：1 年 | 状态：生效中</div>
-                        </div>
-                      </div>
-                      <div style={{ padding: '8px 12px', background: '#e6fffb', borderRadius: 4, marginBottom: 12 }}>
-                        <span style={{ color: '#08979c', fontWeight: 'bold' }}>节省明细：</span>
-                        <div style={{ fontSize: 12, color: '#00474f', marginTop: 4 }}>
-                          • 资源包单价折合 <strong>￥0.16/GB</strong><br />
-                          • 相比按量 HTTPS 亚洲 <strong>￥0.60/GB</strong> 大幅降低采购成本<br />
-                          • 本期配置付费 ￥16.00 (省下 ￥6.00)
-                        </div>
-                      </div>
-                      <div style={{ fontSize: 12, color: '#8c8c8c' }}>
-                        * 提示：当下行流量耗尽后将自动切换为按量计费，建议根据实际业务分发量决定后续流量包配置。
-                      </div>
+                    <Card title="按量估算口径" style={{ height: '100%' }}>
+                      <Alert
+                        type="info"
+                        showIcon
+                        message="资源包不参与估算"
+                        description="当前统计只使用七牛云用量数据乘以按量单价，资源包购买费用、资源包抵扣、优惠券、余额抵扣和人工调账都不会计入本页合计。"
+                      />
+                      <Divider style={{ margin: '12px 0' }} />
+                      <Space direction="vertical" size={8}>
+                        <span>CDN HTTPS 中国大陆：￥0.28/GB</span>
+                        <span>CDN HTTPS 亚洲：￥0.60/GB</span>
+                        <span>CDN HTTPS 欧美：￥0.40/GB</span>
+                        <span>CDN 回源流量：￥0.15/GB</span>
+                      </Space>
                     </Card>
                   </Col>
                 </Row>
@@ -715,4 +696,3 @@ export default function Dashboard() {
     </div>
   )
 }
-

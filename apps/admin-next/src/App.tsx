@@ -2,6 +2,7 @@ import {
   AppstoreOutlined,
   CloudServerOutlined,
   DashboardOutlined,
+  GlobalOutlined,
   LogoutOutlined,
   MenuOutlined,
   PlaySquareOutlined,
@@ -27,11 +28,36 @@ const Members = React.lazy(() => import('./pages/Members'))
 const MemberDetail = React.lazy(() => import('./pages/MemberDetail'))
 const Statistics = React.lazy(() => import('./pages/Statistics'))
 const Config = React.lazy(() => import('./pages/Config'))
+const Sitemap = React.lazy(() => import('./pages/Sitemap'))
 const ActivityEdit = React.lazy(() => import('./pages/ActivityEdit'))
 const Days = React.lazy(() => import('./pages/Days'))
 const DayEdit = React.lazy(() => import('./pages/DayEdit'))
 
 const { Header, Sider, Content } = Layout
+const APP_TITLE = 'MMGC 管理后台'
+
+function getPageTitle(pathname: string) {
+  if (pathname === '/login') return `登录 - ${APP_TITLE}`
+  if (pathname === '/') return `概览 - ${APP_TITLE}`
+  if (pathname === '/activities/create') return `新增活动 - ${APP_TITLE}`
+  if (/^\/activities\/[^/]+\/days\/create$/.test(pathname)) return `新增天数 - ${APP_TITLE}`
+  if (/^\/activities\/[^/]+\/days\/[^/]+\/edit$/.test(pathname)) return `天数详情 - ${APP_TITLE}`
+  if (/^\/activities\/[^/]+\/days$/.test(pathname)) return `天数管理 - ${APP_TITLE}`
+  if (/^\/activities\/edit\/[^/]+$/.test(pathname)) return `活动详情 - ${APP_TITLE}`
+  if (pathname.startsWith('/activities')) return `活动管理 - ${APP_TITLE}`
+  if (pathname === '/movies/create') return `新增视频 - ${APP_TITLE}`
+  if (/^\/movies\/edit\/[^/]+$/.test(pathname)) return `视频详情 - ${APP_TITLE}`
+  if (pathname.startsWith('/movies')) return `视频管理 - ${APP_TITLE}`
+  if (/^\/sponsors\/[^/]+$/.test(pathname)) return `赞助商详情 - ${APP_TITLE}`
+  if (pathname.startsWith('/sponsors')) return `赞助商管理 - ${APP_TITLE}`
+  if (/^\/members\/[^/]+$/.test(pathname)) return `成员详情 - ${APP_TITLE}`
+  if (pathname.startsWith('/members')) return `成员管理 - ${APP_TITLE}`
+  if (pathname.startsWith('/statistics')) return `统计排行 - ${APP_TITLE}`
+  if (pathname.startsWith('/cloud')) return `云运维 - ${APP_TITLE}`
+  if (pathname.startsWith('/sitemap')) return `站点地图 - ${APP_TITLE}`
+  if (pathname.startsWith('/config')) return `全局配置 - ${APP_TITLE}`
+  return APP_TITLE
+}
 
 const items = [
   { key: '/', icon: <DashboardOutlined />, label: '概览' },
@@ -43,6 +69,8 @@ const items = [
   { key: '/cloud', icon: <CloudServerOutlined />, label: '云运维' },
   { key: '/config', icon: <SettingOutlined />, label: '全局配置' }
 ]
+
+items.splice(8, 0, { key: '/sitemap', icon: <GlobalOutlined />, label: '站点地图' })
 
 function Shell() {
   const navigate = useNavigate()
@@ -58,6 +86,7 @@ function Shell() {
     if (location.pathname.startsWith('/members')) return '/members'
     if (location.pathname.startsWith('/statistics')) return '/statistics'
     if (location.pathname.startsWith('/cloud')) return '/cloud'
+    if (location.pathname.startsWith('/sitemap')) return '/sitemap'
     if (location.pathname.startsWith('/config')) return '/config'
     return '/'
   }, [location.pathname])
@@ -93,7 +122,7 @@ function Shell() {
           <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
             <Button className="mobile-menu" icon={<MenuOutlined />} onClick={() => setOpen(true)} />
             <div style={{ minWidth: 0 }}>
-              <strong>MMGC Admin Next</strong>
+              <strong>{APP_TITLE}</strong>
               <span className="topbar-subtitle">活动、视频、云运维一体化管理</span>
             </div>
           </div>
@@ -129,6 +158,7 @@ function Shell() {
               <Route path="/members/:id" element={<MemberDetail />} />
               <Route path="/statistics" element={<Statistics />} />
               <Route path="/cloud" element={<CloudOps />} />
+              <Route path="/sitemap" element={<Sitemap />} />
               <Route path="/config" element={<Config />} />
             </Routes>
           </Suspense>
@@ -152,6 +182,12 @@ function RequireAuth() {
 }
 
 export default function App() {
+  const location = useLocation()
+
+  useEffect(() => {
+    document.title = getPageTitle(location.pathname)
+  }, [location.pathname])
+
   return (
     <Suspense fallback={<div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Spin size="large" /></div>}>
       <Routes>

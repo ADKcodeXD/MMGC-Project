@@ -248,6 +248,42 @@
   - `corepack pnpm --filter mirai-offcial-website run build` fails on Windows because the existing package script uses Unix shell syntax after `nuxi build`.
   - `corepack pnpm --filter mirai-offcial-website exec nuxi build` passed.
 
+### PV Analytics, Billing Rework, And Schedule Order Fix
+
+- Reused and completed the existing frontend analytics plugin:
+  - initial page view is now tracked,
+  - route changes continue to report `/statistics/track`.
+- Added backend `/statistics/trackOverview`:
+  - total PV,
+  - total UV by IP,
+  - total events,
+  - daily PV/UV/click trends,
+  - page path Top 20.
+- Reworked Qiniu billing constants from the provided June 2026 bill:
+  - standard storage: ￥0.115/GB/month with 10GB free quota,
+  - low-frequency storage: ￥0.075/GB/month,
+  - low-frequency retrieval: ￥0.03/GB,
+  - CDN back-to-origin: ￥0.15/GB with standard 10GB free quota,
+  - China HTTPS outbound: ￥0.28/GB,
+  - Asia overseas HTTPS: ￥0.60/GB,
+  - EU/NA HTTPS: ￥0.40/GB,
+  - 100GB CDN traffic package: ￥16 fixed cost.
+- Rebuilt Cloud Ops page with:
+  - PV/UV cards,
+  - CDN traffic charts,
+  - PV/UV trend charts,
+  - page Top table,
+  - Qiniu cost pie chart,
+  - usage bar chart,
+  - detailed billing table by item/category.
+- Fixed front/back schedule order consistency:
+  - backend `getMovieByActivityId` now sorts by `sortIndex ASC, movieId ASC`,
+  - frontend movie detail related list now sorts by `sortIndex ASC`.
+- Validation:
+  - `corepack pnpm --filter mmgc_backend run build` passed.
+  - `corepack pnpm --filter @mmgc/admin-next run build` passed.
+  - `corepack pnpm --filter mirai-offcial-website exec nuxi build` passed.
+
 ### Completed Phase 5.6: Analytics, Cache Sorting Fix, and Subpath Deployment
 
 - **Analytics Event & PV Tracking**:
@@ -267,3 +303,98 @@
   - `corepack pnpm --filter mirai-offcial-website exec nuxi typecheck` completed successfully.
   - `corepack pnpm --filter @mmgc/admin-next run build` completed successfully.
 
+### Qiniu Billing Adjustment: Metered Usage Only
+
+- Removed the 100GB CDN traffic package fixed cost from Qiniu billing estimation.
+- Kept the `trafficPackageCost` response field as `0` for compatibility with existing admin types.
+- Updated Cloud Ops default values, billing table, pie chart source data, and operation note so displayed totals are pure usage-based estimates.
+- Resource package purchases and package offsets are intentionally excluded from estimated totals.
+
+### Admin Next Responsive Baseline
+
+- Added global responsive layout guards for the React admin:
+  - page containers, cards, tabs, forms, tables, and grids now shrink safely on narrow screens,
+  - table wrappers get horizontal overflow protection,
+  - filter toolbars and page-heading actions wrap and become full-width on mobile,
+  - pagination, statistic cards, card headers, and form controls get smaller mobile spacing.
+- Replaced fixed inline save bars in activity/day/movie edit pages with a shared `.floating-actions` layout.
+- Fixed the floating action bar desktop offset so it no longer overlays the left sidebar, while mobile uses full width.
+- Updated the day movie picker drawer so its two-column workspace stacks vertically on mobile.
+- Validation: `corepack pnpm --filter @mmgc/admin-next run build` passed.
+
+### Schedule Movie Order Alignment
+
+- Kept Day Edit and the movie picker drawer on the authorized admin `/movie/getAllMovie` endpoint so admin-only fields and unpublished resources remain available.
+- Explicitly query bound contest videos with `sortRule: 'sortIndex movieId'` and ascending `orderRule` semantics to match the public frontend display order.
+- Added backend default sorting for admin movie list queries scoped by `activityId + day`, so schedule queries default to `sortIndex ASC, movieId ASC` even if a caller forgets to pass sort params.
+- When binding a video from the library into a Day, the admin now assigns `sortIndex` to the current list tail (`max(sortIndex) + 1`) so newly added videos do not jump to the front with `sortIndex = 0`.
+- Validation:
+  - `corepack pnpm --filter @mmgc/admin-next run build` passed.
+  - `corepack pnpm --filter mmgc_backend run build` passed.
+
+### Qiniu Kodo Storage And Origin Stats Fetch
+
+- Hardened backend Qiniu Kodo statistics fetching for dashboard overview:
+  - standard storage now tries both `api.qiniu.com` and `api.qiniuapi.com`,
+  - Kodo stats requests now prefer Qiniu v2 access tokens and fall back to the legacy token path,
+  - request headers include `Content-Type` and `X-Qiniu-Date` to match the Qiniu SDK v2 signing path.
+- Added tolerant response parsing for storage and flow stats:
+  - supports `datas`, `data.datas`, `result.datas`, raw arrays, and common `values.flow` payloads,
+  - standard storage current/average values and CDN back-to-origin bytes no longer depend on a single response shape.
+- Affected dashboard fields:
+  - `currentStorageGB`,
+  - `billing.standardStorageGB`,
+  - `billing.standardCdnBackToOriginGB`,
+  - `billing.standardCdnBackToOriginCost`,
+  - low-frequency storage/retrieval/origin fields.
+- Validation: `corepack pnpm --filter mmgc_backend run build` passed.
+
+### Sitemap Management
+
+- Added a React admin page at `/sitemap` for sitemap operations:
+  - checks `/sitemap.xml`, `/robots.txt`, and `/api/__sitemap__/urls`,
+  - shows sitemap URL count and dynamic source URL count,
+  - previews sitemap URLs with search and copy actions,
+  - includes Google Search Console and Baidu Search Resource Platform submission links and steps.
+- Added a left-menu entry named `站点地图`.
+- Added Nuxt `robots.txt` route that declares `Sitemap: <site-url>/sitemap.xml`.
+- Fixed backend `/movie/getMovieByActivityId` filtering so omitting `day` returns all activity movies instead of matching `day: undefined`; this keeps the sitemap dynamic source from missing movie pages.
+- Validation:
+  - `corepack pnpm --filter @mmgc/admin-next run build` passed.
+  - `corepack pnpm --filter mirai-offcial-website exec nuxi build` passed.
+  - `corepack pnpm --filter mmgc_backend run build` passed.
+
+### Sitemap 401 Fix
+
+- Fixed sitemap generation error: `[GET] "/api/__sitemap__/urls": 401 Unauthorized`.
+- Root cause: the frontend global `/api` proxy middleware intercepted `/api/__sitemap__/urls` before Nitro could serve the local sitemap source, forwarding it to the backend where it required auth / did not exist.
+- Moved the dynamic sitemap source to `/__sitemap__/urls`, outside the proxied `/api` namespace.
+- Updated `@nuxtjs/sitemap` source config from `/api/__sitemap__/urls` to `/__sitemap__/urls`.
+- Removed the old `server/api/__sitemap__/urls.ts` route to avoid future confusion.
+- Updated admin sitemap management to call backend `/statistics/sitemapOverview`; the backend performs sitemap/robots/source checks server-side, avoiding browser CORS failures in `adminonline`.
+- Validation:
+  - `corepack pnpm --filter mirai-offcial-website exec nuxi build` passed.
+  - `corepack pnpm --filter mmgc_backend run build` passed.
+  - `corepack pnpm --filter @mmgc/admin-next run build` passed.
+
+### Qiniu Usage Billing Estimate Scope
+
+- Removed prepaid CDN traffic package presentation from the new admin dashboard billing view.
+- Dashboard billing fallback now defaults `trafficPackageCost` and `totalCost` to `0`, matching the backend pure usage-based estimate.
+- Removed the traffic package row from the billing table and removed package entries from the pie chart and usage bar chart.
+- Replaced the traffic package savings card with a usage-based estimate note:
+  - estimates use only usage multiplied by pay-as-you-go rates,
+  - prepaid packages, package offsets, coupons, balance deductions, and manual bill adjustments are excluded.
+- Validation: `corepack pnpm --filter @mmgc/admin-next run build` passed.
+
+### Admin Title And Favicon
+
+- Reused the frontend MiraiMad favicon for both admin applications:
+  - `apps/admin-next/public/favicon.ico`,
+  - `apps/MMGCBACK/public/favicon.ico`.
+- Added a complete HTML head to the React admin entry with `MMGC 管理后台` as the default title.
+- Added route-based document titles in the React admin using the format `页面 - MMGC 管理后台`.
+- Updated the legacy Vue admin base title to `MMGC 管理后台`; its existing route title hook keeps the same `页面 - MMGC 管理后台` format.
+- Validation:
+  - `corepack pnpm --filter @mmgc/admin-next run build` passed.
+  - `corepack pnpm --filter @mmgc/admin run build` passed with existing non-blocking warnings.

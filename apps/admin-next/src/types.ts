@@ -123,6 +123,62 @@ export type BillingDetails = {
   totalCost: number
 }
 
+export type TrackDailyItem = {
+  date: string
+  pv: number
+  uv: number
+  click: number
+}
+
+export type TrackPageItem = {
+  pageUrl: string
+  pv: number
+  uv: number
+}
+
+export type TrackOverviewData = {
+  totalPv: number
+  totalUv: number
+  totalEvents: number
+  daily: TrackDailyItem[]
+  topPages: TrackPageItem[]
+}
+
+export type SitemapRow = {
+  loc: string
+  lastmod?: string
+  changefreq?: string
+  priority?: string
+}
+
+export type SitemapOverviewData = {
+  siteUrl: string
+  sitemapUrl: string
+  robotsUrl: string
+  sourceUrl: string
+  sitemap: {
+    ok: boolean
+    status: number
+    error?: string | null
+    urlCount: number
+    rows: SitemapRow[]
+  }
+  robots: {
+    ok: boolean
+    status: number
+    error?: string | null
+    hasSitemap: boolean
+    content: string
+  }
+  source: {
+    ok: boolean
+    status: number
+    error?: string | null
+    urlCount: number
+    urls: string[]
+  }
+}
+
 export type DashboardOverviewData = {
   totalTrafficGB: number
   chinaTrafficGB?: number

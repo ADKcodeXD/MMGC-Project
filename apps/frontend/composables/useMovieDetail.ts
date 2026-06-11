@@ -77,7 +77,9 @@ export const useMovieDetail = () => {
         movieDetail.value.activityVo.activityId,
         movieDetail.value.day
       )
-      movies.value = data?.result.filter(item => item.movieId !== movieId.value) || []
+      movies.value = data?.result
+        .filter(item => item.movieId !== movieId.value)
+        .sort((a, b) => (a.sortIndex || 0) - (b.sortIndex || 0) || a.movieId - b.movieId) || []
     }
   }
 

@@ -10,6 +10,150 @@ import qiniu from 'qiniu'
 import axios from 'axios'
 import config from '~/config/config.default'
 import dayjs from 'dayjs'
+
+const QINIU_BILLING = {
+  standardStorageMonthly: 0.115,
+  standardStorageFreeGB: 10,
+  lowFreqStorageMonthly: 0.075,
+  lowFreqRetrievalPerGB: 0.03,
+  cdnBackToOriginPerGB: 0.15,
+  standardBackToOriginFreeGB: 10,
+  chinaHttpsPerGB: 0.28,
+  overseaAsiaHttpsPerGB: 0.6,
+  overseaEuNaHttpsPerGB: 0.4,
+  overseaAsiaRatio: 38.5819 / (38.5819 + 41.7671)
+}
+
+const round2 = (value: number) => Number(value.toFixed(2))
+const round4 = (value: number) => Number(value.toFixed(4))
+
+const qiniuDateHeader = () => {
+  const date = new Date()
+  const pad = (value: number) => value.toString().padStart(2, '0')
+  return `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}T${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}${pad(date.getUTCSeconds())}Z`
+}
+
+const buildQiniuUrl = (host: string, path: string, params: Record<string, string | number | undefined>) => {
+  const query = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') query.set(key, value.toString())
+  })
+  return `${host}${path}?${query.toString()}`
+}
+
+const qiniuV2Headers = (mac: qiniu.auth.digest.Mac, url: string) => {
+  const headers = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'X-Qiniu-Date': qiniuDateHeader()
+  }
+  return {
+    ...headers,
+    Authorization: qiniu.util.generateAccessTokenV2(mac, url, 'GET', headers['Content-Type'], undefined, headers)
+  }
+}
+
+const qiniuLegacyHeaders = (mac: qiniu.auth.digest.Mac, url: string) => ({
+  'Content-Type': 'application/x-www-form-urlencoded',
+  Authorization: qiniu.util.generateAccessToken(mac, url, '')
+})
+
+const fetchQiniuStat = async (mac: qiniu.auth.digest.Mac, path: string, params: Record<string, string | number | undefined>) => {
+  const hosts = ['https://api.qiniu.com', 'https://api.qiniuapi.com']
+  const errors: string[] = []
+
+  for (const host of hosts) {
+    const url = buildQiniuUrl(host, path, params)
+    for (const headers of [qiniuV2Headers(mac, url), qiniuLegacyHeaders(mac, url)]) {
+      try {
+        const res = await axios.get(url, { headers })
+        return res.data
+      } catch (err: any) {
+        errors.push(`${url}: ${JSON.stringify(err?.response?.data || err?.message)}`)
+      }
+    }
+  }
+
+  throw new Error(errors.join('; '))
+}
+
+const readNumericSeries = (payload: any) => {
+  const list = payload?.datas || payload?.data?.datas || payload?.result?.datas || payload?.values || payload
+  if (!Array.isArray(list)) return []
+  return list
+    .map(item => {
+      if (typeof item === 'number') return item
+      if (typeof item?.value === 'number') return item.value
+      if (typeof item?.values === 'number') return item.values
+      if (typeof item?.values?.space === 'number') return item.values.space
+      if (typeof item?.values?.storage === 'number') return item.values.storage
+      return 0
+    })
+    .filter(value => value > 0)
+}
+
+const sumQiniuFlowBytes = (payload: any) => {
+  const list = Array.isArray(payload)
+    ? payload
+    : payload?.data || payload?.datas || payload?.result || payload?.items || []
+  if (!Array.isArray(list)) return 0
+
+  return list.reduce((total: number, item: any) => {
+    if (typeof item === 'number') return total + item
+    if (typeof item?.flow === 'number') return total + item.flow
+    if (typeof item?.value === 'number') return total + item.value
+    if (typeof item?.values === 'number') return total + item.values
+    if (typeof item?.values?.flow === 'number') return total + item.values.flow
+    if (Array.isArray(item?.values)) {
+      return total + item.values.reduce((sum: number, value: any) => sum + (Number(value?.flow ?? value) || 0), 0)
+    }
+    return total
+  }, 0)
+}
+
+const getSiteUrl = () => {
+  const siteUrl = config.SITE_URL || config.FRONTEND_URL || config.NUXT_PUBLIC_API_BASE || 'https://mirai-mad.com'
+  return siteUrl.replace(/\/$/, '')
+}
+
+const parseXmlLocRows = (xmlText: string) => {
+  const rows: Array<{ loc: string; lastmod?: string; changefreq?: string; priority?: string }> = []
+  const urlBlocks = xmlText.match(/<url>[\s\S]*?<\/url>/g) || []
+  for (const block of urlBlocks) {
+    const loc = block.match(/<loc>([\s\S]*?)<\/loc>/)?.[1]?.trim()
+    if (!loc) continue
+    rows.push({
+      loc,
+      lastmod: block.match(/<lastmod>([\s\S]*?)<\/lastmod>/)?.[1]?.trim(),
+      changefreq: block.match(/<changefreq>([\s\S]*?)<\/changefreq>/)?.[1]?.trim(),
+      priority: block.match(/<priority>([\s\S]*?)<\/priority>/)?.[1]?.trim()
+    })
+  }
+  return rows
+}
+
+const fetchUrlCheck = async (url: string, responseType: 'text' | 'json' = 'text') => {
+  try {
+    const res = await axios.get(url, {
+      responseType: responseType === 'json' ? 'json' : 'text',
+      timeout: 15000,
+      validateStatus: status => status >= 200 && status < 500
+    })
+    return {
+      ok: res.status >= 200 && res.status < 300,
+      status: res.status,
+      data: res.data,
+      error: res.status >= 200 && res.status < 300 ? null : `HTTP ${res.status}`
+    }
+  } catch (err: any) {
+    return {
+      ok: false,
+      status: 0,
+      data: responseType === 'json' ? [] : '',
+      error: err?.message || 'Request failed'
+    }
+  }
+}
+
 const calcLongestConsecutiveTimes = (nums: number[]) => {
   if (nums.length === 0) return 0
   let longestTimes = 1
@@ -45,6 +189,133 @@ export default class StatisticsService extends BaseService {
     })
     await track.save()
     return null
+  }
+
+  async getTrackOverview(days = 7) {
+    const start = dayjs().subtract(days - 1, 'day').startOf('day').valueOf()
+    const match = { createTime: { $gte: start } }
+
+    const [pvTotal, eventTotal, uvAgg, dailyAgg, pageAgg] = await Promise.all([
+      Track.countDocuments({ ...match, eventType: 'pv' }),
+      Track.countDocuments(match),
+      Track.aggregate([
+        { $match: match },
+        { $group: { _id: '$ip' } },
+        { $match: { _id: { $ne: null } } },
+        { $count: 'total' }
+      ]),
+      Track.aggregate([
+        { $match: match },
+        {
+          $group: {
+            _id: {
+              date: { $dateToString: { format: '%Y-%m-%d', date: { $toDate: '$createTime' }, timezone: 'Asia/Shanghai' } },
+              eventType: '$eventType'
+            },
+            count: { $sum: 1 },
+            ips: { $addToSet: '$ip' }
+          }
+        },
+        { $sort: { '_id.date': 1 } }
+      ]),
+      Track.aggregate([
+        { $match: { ...match, eventType: 'pv' } },
+        {
+          $group: {
+            _id: '$pageUrl',
+            pv: { $sum: 1 },
+            ips: { $addToSet: '$ip' }
+          }
+        },
+        { $sort: { pv: -1 } },
+        { $limit: 20 }
+      ])
+    ])
+
+    const dailyMap = new Map<string, { date: string; pv: number; click: number; uvSet: Set<string> }>()
+    for (let i = days - 1; i >= 0; i--) {
+      const date = dayjs().subtract(i, 'day').format('YYYY-MM-DD')
+      dailyMap.set(date, { date, pv: 0, click: 0, uvSet: new Set() })
+    }
+
+    for (const item of dailyAgg) {
+      const date = item?._id?.date
+      if (!date) continue
+      const row = dailyMap.get(date) || { date, pv: 0, click: 0, uvSet: new Set<string>() }
+      if (item?._id?.eventType === 'pv') row.pv += item.count || 0
+      if (item?._id?.eventType === 'click') row.click += item.count || 0
+      for (const ip of item.ips || []) {
+        if (ip) row.uvSet.add(ip)
+      }
+      dailyMap.set(date, row)
+    }
+
+    const daily = Array.from(dailyMap.values()).map(item => ({
+      date: item.date,
+      pv: item.pv,
+      click: item.click,
+      uv: item.uvSet.size
+    }))
+
+    const topPages = pageAgg.map(item => ({
+      pageUrl: item._id || '/',
+      pv: item.pv || 0,
+      uv: (item.ips || []).filter(Boolean).length
+    }))
+
+    return {
+      totalPv: pvTotal,
+      totalUv: uvAgg?.[0]?.total || 0,
+      totalEvents: eventTotal,
+      daily,
+      topPages
+    }
+  }
+
+  async getSitemapOverview() {
+    const siteUrl = getSiteUrl()
+    const sitemapUrl = `${siteUrl}/sitemap.xml`
+    const robotsUrl = `${siteUrl}/robots.txt`
+    const sourceUrl = `${siteUrl}/__sitemap__/urls`
+
+    const [sitemap, robots, source] = await Promise.all([
+      fetchUrlCheck(sitemapUrl, 'text'),
+      fetchUrlCheck(robotsUrl, 'text'),
+      fetchUrlCheck(sourceUrl, 'json')
+    ])
+
+    const sitemapText = typeof sitemap.data === 'string' ? sitemap.data : ''
+    const robotsText = typeof robots.data === 'string' ? robots.data : ''
+    const sourceList = Array.isArray(source.data) ? source.data : []
+    const rows = parseXmlLocRows(sitemapText)
+
+    return {
+      siteUrl,
+      sitemapUrl,
+      robotsUrl,
+      sourceUrl,
+      sitemap: {
+        ok: sitemap.ok,
+        status: sitemap.status,
+        error: sitemap.error,
+        urlCount: rows.length,
+        rows
+      },
+      robots: {
+        ok: robots.ok,
+        status: robots.status,
+        error: robots.error,
+        hasSitemap: robotsText.includes(sitemapUrl),
+        content: robotsText
+      },
+      source: {
+        ok: source.ok,
+        status: source.status,
+        error: source.error,
+        urlCount: sourceList.length,
+        urls: sourceList
+      }
+    }
   }
 
   async findAuthorList(pageParams: PageParams) {
@@ -312,8 +583,8 @@ export default class StatisticsService extends BaseService {
         asiaTrafficCost: 0,
         euNaTrafficGB: 0,
         euNaTrafficCost: 0,
-        trafficPackageCost: 16.00,
-        totalCost: 16.00
+        trafficPackageCost: 0,
+        totalCost: 0
       }
     }
     if (!accessKey || !secretKey) {
@@ -356,12 +627,6 @@ export default class StatisticsService extends BaseService {
     const spaceBegin = dayjs().subtract(days - 1, 'day').format('YYYYMMDD000000')
     const spaceEnd = dayjs().format('YYYYMMDD235959')
 
-    const qiniuHeaders = (url: string) => {
-      const token = qiniu.util.generateAccessToken(mac, url, undefined)
-      const authHeader = token.replace('QBox ', 'Qiniu ')
-      return { Authorization: authHeader }
-    }
-
     let standardStorageGB = 0
     let avgStandardStorageGB = 0
     let lowFreqStorageGB = 0
@@ -373,9 +638,8 @@ export default class StatisticsService extends BaseService {
     if (bucket) {
       // 2.1 Standard Storage
       try {
-        const url = `https://api.qiniuapi.com/v6/space?bucket=${bucket}&begin=${spaceBegin}&end=${spaceEnd}&g=day`
-        const res = await axios.get(url, { headers: qiniuHeaders(url) })
-        const datas = res.data?.datas || []
+        const data = await fetchQiniuStat(mac, '/v6/space', { bucket, begin: spaceBegin, end: spaceEnd, g: 'day' })
+        const datas = readNumericSeries(data)
         if (datas.length > 0) {
           const sum = datas.reduce((acc: number, val: number) => acc + val, 0)
           avgStandardStorageGB = (sum / datas.length) / 1024 / 1024 / 1024
@@ -387,9 +651,8 @@ export default class StatisticsService extends BaseService {
 
       // 2.2 Low-Frequency Storage
       try {
-        const url = `https://api.qiniuapi.com/v6/space_line?bucket=${bucket}&begin=${spaceBegin}&end=${spaceEnd}&g=day`
-        const res = await axios.get(url, { headers: qiniuHeaders(url) })
-        const datas = res.data?.datas || []
+        const data = await fetchQiniuStat(mac, '/v6/space_line', { bucket, begin: spaceBegin, end: spaceEnd, g: 'day' })
+        const datas = readNumericSeries(data)
         if (datas.length > 0) {
           const sum = datas.reduce((acc: number, val: number) => acc + val, 0)
           avgLowFreqStorageGB = (sum / datas.length) / 1024 / 1024 / 1024
@@ -401,10 +664,16 @@ export default class StatisticsService extends BaseService {
 
       // 2.3 Standard Storage CDN Back-to-Origin
       try {
-        const url = `https://api.qiniuapi.com/v6/blob_io?bucket=${bucket}&begin=${spaceBegin}&end=${spaceEnd}&g=day&select=flow&$metric=cdn_flow_out&$ftype=0`
-        const res = await axios.get(url, { headers: qiniuHeaders(url) })
-        const list = res.data || []
-        const totalBytes = list.reduce((acc: number, item: any) => acc + (item?.values?.flow || 0), 0)
+        const data = await fetchQiniuStat(mac, '/v6/blob_io', {
+          bucket,
+          begin: spaceBegin,
+          end: spaceEnd,
+          g: 'day',
+          select: 'flow',
+          '$metric': 'cdn_flow_out',
+          '$ftype': 0
+        })
+        const totalBytes = sumQiniuFlowBytes(data)
         standardCdnBackToOriginGB = totalBytes / 1024 / 1024 / 1024
       } catch (err: any) {
         console.error('Failed to fetch standard CDN back-to-origin:', err?.response?.data || err?.message)
@@ -412,10 +681,16 @@ export default class StatisticsService extends BaseService {
 
       // 2.4 Low-Frequency Storage CDN Back-to-Origin
       try {
-        const url = `https://api.qiniuapi.com/v6/blob_io?bucket=${bucket}&begin=${spaceBegin}&end=${spaceEnd}&g=day&select=flow&$metric=cdn_flow_out&$ftype=1`
-        const res = await axios.get(url, { headers: qiniuHeaders(url) })
-        const list = res.data || []
-        const totalBytes = list.reduce((acc: number, item: any) => acc + (item?.values?.flow || 0), 0)
+        const data = await fetchQiniuStat(mac, '/v6/blob_io', {
+          bucket,
+          begin: spaceBegin,
+          end: spaceEnd,
+          g: 'day',
+          select: 'flow',
+          '$metric': 'cdn_flow_out',
+          '$ftype': 1
+        })
+        const totalBytes = sumQiniuFlowBytes(data)
         lowFreqCdnBackToOriginGB = totalBytes / 1024 / 1024 / 1024
       } catch (err: any) {
         console.error('Failed to fetch low-frequency CDN back-to-origin:', err?.response?.data || err?.message)
@@ -423,10 +698,16 @@ export default class StatisticsService extends BaseService {
 
       // 2.5 Low-Frequency Data Retrieval
       try {
-        const url = `https://api.qiniuapi.com/v6/blob_io?bucket=${bucket}&begin=${spaceBegin}&end=${spaceEnd}&g=day&select=flow&$metric=flow_out&$ftype=1`
-        const res = await axios.get(url, { headers: qiniuHeaders(url) })
-        const list = res.data || []
-        const totalBytes = list.reduce((acc: number, item: any) => acc + (item?.values?.flow || 0), 0)
+        const data = await fetchQiniuStat(mac, '/v6/blob_io', {
+          bucket,
+          begin: spaceBegin,
+          end: spaceEnd,
+          g: 'day',
+          select: 'flow',
+          '$metric': 'flow_out',
+          '$ftype': 1
+        })
+        const totalBytes = sumQiniuFlowBytes(data)
         lowFreqRetrievalGB = totalBytes / 1024 / 1024 / 1024
       } catch (err: any) {
         console.error('Failed to fetch low-frequency data retrieval:', err?.response?.data || err?.message)
@@ -436,30 +717,30 @@ export default class StatisticsService extends BaseService {
     // 3. Billing Recalculations
     // 3.1 Storage Costs (存储费用)
     // - Standard Storage Space: ￥0.115/GB/month. Free quota: 10 GB.
-    const standardStorageCost = Number((Math.max(0, avgStandardStorageGB - 10) * 0.115 * (days / 30)).toFixed(2))
+    const billingDaysRatio = days / 30
+    const standardStorageBillableGB = Math.max(0, avgStandardStorageGB - QINIU_BILLING.standardStorageFreeGB)
+    const standardStorageCost = round2(standardStorageBillableGB * QINIU_BILLING.standardStorageMonthly * billingDaysRatio)
     // - Low-frequency Storage Space: ￥0.075/GB/month.
-    const lowFreqStorageCost = Number((avgLowFreqStorageGB * 0.075 * (days / 30)).toFixed(2))
+    const lowFreqStorageCost = round2(avgLowFreqStorageGB * QINIU_BILLING.lowFreqStorageMonthly * billingDaysRatio)
     // - Low-frequency Data Retrieval: ￥0.03/GB.
-    const lowFreqRetrievalCost = Number((lowFreqRetrievalGB * 0.03).toFixed(2))
+    const lowFreqRetrievalCost = round2(lowFreqRetrievalGB * QINIU_BILLING.lowFreqRetrievalPerGB)
 
     // 3.2 CDN Back-to-Origin Costs (回源流量费)
     // - Standard Storage CDN Back-to-Origin Traffic: ￥0.15/GB. Free quota: 10 GB.
-    const standardCdnBackToOriginCost = Number((Math.max(0, standardCdnBackToOriginGB - 10) * 0.15).toFixed(2))
+    const standardBackToOriginBillableGB = Math.max(0, standardCdnBackToOriginGB - QINIU_BILLING.standardBackToOriginFreeGB)
+    const standardCdnBackToOriginCost = round2(standardBackToOriginBillableGB * QINIU_BILLING.cdnBackToOriginPerGB)
     // - Low-frequency Storage CDN Back-to-Origin Traffic: ￥0.15/GB.
-    const lowFreqCdnBackToOriginCost = Number((lowFreqCdnBackToOriginGB * 0.15).toFixed(2))
+    const lowFreqCdnBackToOriginCost = round2(lowFreqCdnBackToOriginGB * QINIU_BILLING.cdnBackToOriginPerGB)
 
     // 3.3 CDN HTTPS Outbound Traffic Costs (下行流量费)
     // - CDN HTTPS Domestic (China): ￥0.28 / GB.
-    const chinaTrafficCost = Number((chinaTrafficGB * 0.28).toFixed(2))
+    const chinaTrafficCost = round2(chinaTrafficGB * QINIU_BILLING.chinaHttpsPerGB)
     // - Oversea traffic is split into: Asia (48% at ￥0.60/GB) and EU/NA (52% at ￥0.40/GB)
-    const asiaTrafficGB = overseaTrafficGB * 0.48
-    const euNaTrafficGB = overseaTrafficGB * 0.52
-    const asiaTrafficCost = Number((asiaTrafficGB * 0.60).toFixed(2))
-    const euNaTrafficCost = Number((euNaTrafficGB * 0.40).toFixed(2))
-    const overseaTrafficCost = Number((asiaTrafficCost + euNaTrafficCost).toFixed(2))
-
-    // 3.4 CDN universal traffic package (fixed purchased cost)
-    const trafficPackageCost = 16.00
+    const asiaTrafficGB = overseaTrafficGB * QINIU_BILLING.overseaAsiaRatio
+    const euNaTrafficGB = Math.max(0, overseaTrafficGB - asiaTrafficGB)
+    const asiaTrafficCost = round2(asiaTrafficGB * QINIU_BILLING.overseaAsiaHttpsPerGB)
+    const euNaTrafficCost = round2(euNaTrafficGB * QINIU_BILLING.overseaEuNaHttpsPerGB)
+    const overseaTrafficCost = round2(asiaTrafficCost + euNaTrafficCost)
 
     const totalCost = Number((
       standardStorageCost +
@@ -469,8 +750,7 @@ export default class StatisticsService extends BaseService {
       lowFreqCdnBackToOriginCost +
       chinaTrafficCost +
       asiaTrafficCost +
-      euNaTrafficCost +
-      trafficPackageCost
+      euNaTrafficCost
     ).toFixed(2))
 
     return {
@@ -505,7 +785,7 @@ export default class StatisticsService extends BaseService {
         asiaTrafficCost,
         euNaTrafficGB: Number(euNaTrafficGB.toFixed(4)),
         euNaTrafficCost,
-        trafficPackageCost,
+        trafficPackageCost: 0,
         totalCost
       }
     }

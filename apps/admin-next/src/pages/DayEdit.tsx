@@ -77,12 +77,19 @@ export default function DayEdit() {
 
   const moviesQuery = useQuery({
     queryKey: ['day-movies', activityId, dayIndex],
-    queryFn: () => movieApi.list({ page: 1, pageSize: 500, activityId, day: dayIndex }),
+    queryFn: () => movieApi.list({
+      page: 1,
+      pageSize: 500,
+      activityId,
+      day: dayIndex,
+      sortRule: 'sortIndex movieId',
+      orderRule: 'reverse'
+    }),
     enabled: !isCreate
   })
 
   const currentDay = daysQuery.data?.find(item => item.day === dayIndex)
-  const sortedMovies = [...(moviesQuery.data?.result || [])].sort((a, b) => (a.sortIndex || 0) - (b.sortIndex || 0))
+  const sortedMovies = moviesQuery.data?.result || []
 
   useEffect(() => {
     if (currentDay) {
@@ -251,7 +258,7 @@ export default function DayEdit() {
           </Card>
         )}
 
-        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', padding: '14px 24px', boxShadow: '0 -2px 8px rgba(0,0,0,0.08)', zIndex: 100, display: 'flex', justifyContent: 'flex-end', gap: 16 }}>
+        <div className="floating-actions">
           <Button size="large" style={{ minWidth: 110 }} onClick={() => navigate(`/activities/${activityId}/days`)}>取消</Button>
           <Button size="large" type="primary" htmlType="submit" loading={saveMutation.isPending} style={{ minWidth: 160, height: 44 }}>
             保存天数信息

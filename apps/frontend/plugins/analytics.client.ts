@@ -27,6 +27,15 @@ export default defineNuxtPlugin((nuxtApp) => {
   }
 
   if (process.client) {
+    nextTick(() => {
+      const current = router.currentRoute.value
+      trackEvent('pv', 'page_view', {
+        path: current.path,
+        name: current.name as string,
+        query: current.query
+      })
+    })
+
     router.afterEach((to) => {
       nextTick(() => {
         trackEvent('pv', 'page_view', {

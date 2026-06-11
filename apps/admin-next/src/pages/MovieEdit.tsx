@@ -336,7 +336,7 @@ export default function MovieEdit() {
           </Col>
         </Row>
 
-        <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', padding: '14px 24px', boxShadow: '0 -2px 8px rgba(0,0,0,0.08)', zIndex: 100, display: 'flex', justifyContent: 'flex-end', gap: 16 }}>
+        <div className="floating-actions">
           <Button size="large" style={{ minWidth: 110 }} onClick={() => navigate('/movies')}>取消</Button>
           <Button size="large" type="primary" htmlType="submit" loading={saveMutation.isPending} style={{ minWidth: 150, height: 44 }}>
             保存视频

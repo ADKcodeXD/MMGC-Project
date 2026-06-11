@@ -28,11 +28,18 @@ export default function SearchMoviesModal({ open, onClose, activityId, targetDay
 
   const dayMoviesQuery = useQuery({
     queryKey: ['day-movies', activityId, targetDay],
-    queryFn: () => movieApi.list({ page: 1, pageSize: 500, activityId, day: targetDay }),
+    queryFn: () => movieApi.list({
+      page: 1,
+      pageSize: 500,
+      activityId,
+      day: targetDay,
+      sortRule: 'sortIndex movieId',
+      orderRule: 'reverse'
+    }),
     enabled: open
   })
 
-  const boundMovies = [...(dayMoviesQuery.data?.result || [])].sort((a, b) => (a.sortIndex || 0) - (b.sortIndex || 0))
+  const boundMovies = dayMoviesQuery.data?.result || []
 
   const movies = useQuery({
     queryKey: ['movies-for-select', keyword, page, unboundOnly, sortRule, orderRule],
@@ -53,7 +60,10 @@ export default function SearchMoviesModal({ open, onClose, activityId, targetDay
   const availableList = movies.data?.result || []
 
   const bindMutation = useMutation({
-    mutationFn: (movieId: number) => movieApi.update({ movieId, activityId, day: targetDay } as any),
+    mutationFn: (movieId: number) => {
+      const nextSortIndex = Math.max(0, ...boundMovies.map(item => item.sortIndex || 0)) + 1
+      return movieApi.update({ movieId, activityId, day: targetDay, sortIndex: nextSortIndex } as any)
+    },
     onSuccess: () => {
       message.success('绑定成功')
       queryClient.invalidateQueries({ queryKey: ['day-movies', activityId, targetDay] })
@@ -145,11 +155,12 @@ export default function SearchMoviesModal({ open, onClose, activityId, targetDay
       open={open}
       onClose={onClose}
       width="100vw"
+      className="movie-picker-drawer"
       bodyStyle={{ padding: 0, overflow: 'hidden', background: '#f5f7fb' }}
       destroyOnClose
     >
-      <Row style={{ height: '100%' }}>
-        <Col span={8} style={{ height: '100%', background: '#fff', borderRight: '1px solid #eef0f4', display: 'flex', flexDirection: 'column' }}>
+      <Row className="movie-picker-layout" style={{ height: '100%' }}>
+        <Col xs={24} md={8} style={{ height: '100%', background: '#fff', borderRight: '1px solid #eef0f4', display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: '16px 24px', borderBottom: '1px solid #eef0f4', background: '#fafafa' }}>
             <h3 style={{ margin: 0, fontSize: 16 }}>已添加的视频 <Tag color="blue">{boundMovies.length}</Tag></h3>
             <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}>这些视频已绑定至当前 Day {targetDay}</div>
@@ -161,7 +172,7 @@ export default function SearchMoviesModal({ open, onClose, activityId, targetDay
           </div>
         </Col>
 
-        <Col span={16} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Col xs={24} md={16} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: '16px 24px', background: '#fff', borderBottom: '1px solid #eef0f4' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center' }}>
               <div>

@@ -8,9 +8,11 @@ import type {
   PageParams,
   PageResult,
   SiteTrafficItem,
+  SitemapOverviewData,
   SponsorVo,
   StatisticsAuthor,
   SysConfig,
+  TrackOverviewData,
   I18N
 } from '../types'
 import { del, get, post, put } from './client'
@@ -24,7 +26,11 @@ export const statisticsApi = {
   dashboardOverview: (days = 30) =>
     get<DashboardOverviewData>('/statistics/dashboardOverview', { days }),
   trafficStats: (days = 7) =>
-    get<SiteTrafficItem[]>('/statistics/siteTraffic', { days })
+    get<SiteTrafficItem[]>('/statistics/siteTraffic', { days }),
+  trackOverview: (days = 7) =>
+    get<TrackOverviewData>('/statistics/trackOverview', { days }),
+  sitemapOverview: () =>
+    get<SitemapOverviewData>('/statistics/sitemapOverview')
 }
 
 export const activityApi = {
