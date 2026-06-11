@@ -132,7 +132,7 @@ export default class StatisticsService extends BaseService {
     return vo as StatisticsModel
   }
 
-  async getSiteTraffic(days: number = 7) {
+  async getSiteTraffic(days = 7) {
     const accessKey = config.QINIU_ACCESS_KEY || ''
     const secretKey = config.QINIU_SECRET_KEY || ''
     if (!accessKey || !secretKey) {
@@ -143,7 +143,7 @@ export default class StatisticsService extends BaseService {
     let cdnDomain = ''
     try {
       cdnDomain = new URL(cdnLink).hostname
-    } catch (e) {}
+    } catch (e) { /* empty */ }
 
     const frontendDomain = config.QINIU_FRONTEND_DOMAIN || cdnDomain
     const endDate = dayjs().format('YYYY-MM-DD')
@@ -161,7 +161,7 @@ export default class StatisticsService extends BaseService {
           granularity: 'day'
         })
         const fluxUrl = 'https://fusion.qiniuapi.com/v2/tune/flux'
-        const fluxToken = qiniu.util.generateAccessToken(mac, fluxUrl, fluxPayload)
+        const fluxToken = qiniu.util.generateAccessToken(mac, fluxUrl, undefined)
 
         const res = await axios.post(fluxUrl, fluxPayload, {
           headers: {
@@ -186,7 +186,7 @@ export default class StatisticsService extends BaseService {
           freq: '1day'
         })
         const uvUrl = 'https://fusion.qiniuapi.com/v2/tune/loganalyze/uniquevisitor'
-        const uvToken = qiniu.util.generateAccessToken(mac, uvUrl, uvPayload)
+        const uvToken = qiniu.util.generateAccessToken(mac, uvUrl, undefined)
 
         const res = await axios.post(uvUrl, uvPayload, {
           headers: {
@@ -229,7 +229,7 @@ export default class StatisticsService extends BaseService {
     return result
   }
 
-  async getDashboardOverview(days: number = 7) {
+  async getDashboardOverview(days = 7) {
     const accessKey = config.QINIU_ACCESS_KEY || ''
     const secretKey = config.QINIU_SECRET_KEY || ''
     const defaultRes = {
@@ -250,7 +250,7 @@ export default class StatisticsService extends BaseService {
     let cdnDomain = ''
     try {
       cdnDomain = new URL(cdnLink).hostname
-    } catch (e) {}
+    } catch (e) { /* empty */ }
 
     const endDate = dayjs().format('YYYY-MM-DD')
     const startDate = dayjs().subtract(days - 1, 'day').format('YYYY-MM-DD')
@@ -268,7 +268,7 @@ export default class StatisticsService extends BaseService {
           granularity: 'day'
         })
         const fluxUrl = 'https://fusion.qiniuapi.com/v2/tune/flux'
-        const fluxToken = qiniu.util.generateAccessToken(mac, fluxUrl, fluxPayload)
+        const fluxToken = qiniu.util.generateAccessToken(mac, fluxUrl, undefined)
 
         const res = await axios.post(fluxUrl, fluxPayload, {
           headers: {
