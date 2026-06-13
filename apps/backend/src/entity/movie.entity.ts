@@ -18,6 +18,7 @@ export class MovieParamsEntity implements MovieParams {
   authorId = null
   authorName = null
   authorAvatar = null
+  authorSpaceUrl = null
   realPublishTime = null
   expectPlayTime = null
   activityId = null
@@ -34,6 +35,7 @@ export class MovieModelEntity implements MovieModel {
   pollNums = 0
   uploader = 0
   viewNums = 0
+  updateTime: number | null = null
   movieCover = ''
   movieName = {
     cn: ''
@@ -49,6 +51,7 @@ export class MovieModelEntity implements MovieModel {
   authorId = null
   authorName = null
   authorAvatar = null
+  authorSpaceUrl = null
   realPublishTime = null
   expectPlayTime = null
   activityId = null
@@ -61,6 +64,8 @@ export class MovieVoEntity implements MovieVo {
   expectPlayTime: string | null = null
   authorName: string | null = null
   authorAvatar: string | null = null
+  authorSpaceUrl: string | null = null
+  updateTime: string | null = null
   isPublic: boolean | null = false
   isActivityMovie: boolean | null = false
   movieLink: Sns | null = null

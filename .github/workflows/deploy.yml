@@ -2,6 +2,8 @@
 # 需在 Settings -> Secrets 配置：
 #   SSH_HOST, SSH_USERNAME, SSH_PASSWORD 或 SSH_KEY, SSH_PORT, PROJECT_PATH
 #   ALIYUN_ACR_REGISTRY、ALIYUN_ACR_NAMESPACE、ALIYUN_ACR_USERNAME、ALIYUN_ACR_PASSWORD（用 ACR 时必填）
+#   JAKARTA_SSH_HOST, JAKARTA_SSH_USERNAME, JAKARTA_SSH_PASSWORD 或 JAKARTA_SSH_KEY,
+#   JAKARTA_SSH_PORT, JAKARTA_PROJECT_PATH, JAKARTA_API_LOCAL（可选，仅部署海外前台）
 name: Build & Deploy
 
 on:
@@ -15,6 +17,8 @@ env:
   ACR_NS: ${{ secrets.ALIYUN_ACR_NAMESPACE }}
   ACR_USER: ${{ secrets.ALIYUN_ACR_USERNAME }}
   ACR_PASS: ${{ secrets.ALIYUN_ACR_PASSWORD }}
+  MAIN_DEPLOY_ENABLED: ${{ secrets.SSH_HOST != '' && secrets.SSH_USERNAME != '' && secrets.PROJECT_PATH != '' && (secrets.SSH_PASSWORD != '' || secrets.SSH_KEY != '') }}
+  JAKARTA_DEPLOY_ENABLED: ${{ secrets.JAKARTA_SSH_HOST != '' && secrets.JAKARTA_SSH_USERNAME != '' && secrets.JAKARTA_PROJECT_PATH != '' && (secrets.JAKARTA_SSH_PASSWORD != '' || secrets.JAKARTA_SSH_KEY != '') }}
 
 jobs:
   build-and-deploy:
@@ -82,6 +86,7 @@ jobs:
           done
 
       - name: Deploy via SSH
+        if: ${{ env.MAIN_DEPLOY_ENABLED == 'true' }}
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -105,3 +110,63 @@ jobs:
             docker compose -f docker-compose.yml -f docker-compose.production.yml pull
             docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
             docker image prune -f
+
+      - name: Skip main SSH deploy
+        if: ${{ env.MAIN_DEPLOY_ENABLED != 'true' }}
+        run: |
+          echo "Skip: main SSH deployment secrets are not fully configured."
+
+      - name: Deploy Jakarta frontend via SSH
+        if: ${{ env.JAKARTA_DEPLOY_ENABLED == 'true' }}
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.JAKARTA_SSH_HOST }}
+          username: ${{ secrets.JAKARTA_SSH_USERNAME }}
+          password: ${{ secrets.JAKARTA_SSH_PASSWORD }}
+          key: ${{ secrets.JAKARTA_SSH_KEY }}
+          port: ${{ secrets.JAKARTA_SSH_PORT }}
+          command_timeout: 30m
+          script: |
+            if [ -n "${{ secrets.GHCR_TOKEN }}" ]; then
+              echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME || github.actor }}" --password-stdin
+            fi
+            if [ -n "${{ secrets.ALIYUN_ACR_PASSWORD }}" ] && [ -n "${{ secrets.ALIYUN_ACR_REGISTRY }}" ]; then
+              echo "${{ secrets.ALIYUN_ACR_PASSWORD }}" | docker login "${{ secrets.ALIYUN_ACR_REGISTRY }}" -u "${{ secrets.ALIYUN_ACR_USERNAME }}" --password-stdin
+            fi
+            if [ ! -d "${{ secrets.JAKARTA_PROJECT_PATH }}" ]; then
+              git clone https://github.com/${{ github.repository }}.git ${{ secrets.JAKARTA_PROJECT_PATH }}
+            fi
+            cd ${{ secrets.JAKARTA_PROJECT_PATH }}
+            git pull origin master
+            mkdir -p env
+            if [ -z "${{ secrets.JAKARTA_API_LOCAL }}" ]; then
+              export JAKARTA_API_LOCAL="https://mirai-mad.com"
+            else
+              export JAKARTA_API_LOCAL="${{ secrets.JAKARTA_API_LOCAL }}"
+            fi
+            if [ -z "${{ secrets.JAKARTA_SITE_URL }}" ]; then
+              export JAKARTA_SITE_URL="$JAKARTA_API_LOCAL"
+            else
+              export JAKARTA_SITE_URL="${{ secrets.JAKARTA_SITE_URL }}"
+            fi
+            if [ ! -f env/frontend.env.production ]; then
+              cat > env/frontend.env.production <<EOF
+            NUXT_PUBLIC_API_BASE=$JAKARTA_SITE_URL
+            NUXT_PUBLIC_API_PREFIX=/mmgcApi
+            NUXT_PUBLIC_API_LOCAL=$JAKARTA_API_LOCAL
+            EOF
+            fi
+            cat > docker-compose.jakarta.yml <<'EOF'
+            services:
+              frontend:
+                environment:
+                  NUXT_PUBLIC_API_LOCAL: ${JAKARTA_API_LOCAL:-https://mirai-mad.com}
+            EOF
+            docker compose -f docker-compose.yml -f docker-compose.jakarta.yml pull frontend
+            docker compose -f docker-compose.yml -f docker-compose.jakarta.yml up -d --no-deps frontend
+            docker image prune -f
+
+      - name: Skip Jakarta frontend deploy
+        if: ${{ env.JAKARTA_DEPLOY_ENABLED != 'true' }}
+        run: |
+          echo "Skip: Jakarta frontend deployment secrets are not fully configured."

@@ -2,11 +2,16 @@
   <div class="video-container-inner">
     <div class="content-area">
       <p class="title">{{ movieItem.movieName[locale] || movieItem.movieName['cn'] }}</p>
-      <div class="flex items-center justify-between">
-        <div class="flex items-center">
-          <MemberPop v-if="movieItem.author" :member-vo="movieItem.author" :size="30" />
-          <p class="text-light-50 text-xl whitespace-nowrap ml-4">
-            {{ (movieItem.author && movieItem.author?.memberName) || movieItem.authorName }}
+      <div class="mobile-card-meta">
+        <div
+          class="mobile-author"
+          :class="{ 'cursor-pointer': authorBiliLink }"
+          @click="authorBiliLink && openAuthorLink()"
+        >
+          <img v-if="authorAvatar" :src="authorAvatar" class="author-avatar" />
+          <MemberPop v-else-if="movieItem.author" :member-vo="movieItem.author" :size="30" />
+          <p class="author-name text-light-50 text-xl">
+            {{ authorName }}
           </p>
         </div>
         <ElButton
@@ -37,7 +42,7 @@
       </var-ellipsis>
     </div>
 
-    <div class="flex items-center mt-4" v-if="movieItem.isPublic && movieItem.moviePlaylink">
+    <div class="mobile-oper-bar flex items-center mt-4" v-if="movieItem.isPublic && movieItem.moviePlaylink">
       <div class="flex items-center operitem flex-col" @click="likeOrUnLike(movieItem)">
         <template v-if="movieItem.loginVo?.isLike">
           <Icon name="ant-design:like-filled" class="text-xl" />
@@ -129,6 +134,7 @@
 import type { MovieVo } from '~~/types/movie.type'
 import { useRoute } from 'vue-router'
 import { useGlobalStore } from '~~/stores/global'
+import { resolveAssetUrl } from '~~/utils'
 
 const route = useRoute()
 const globalStore = useGlobalStore()
@@ -206,6 +212,18 @@ const authorName = computed(() => {
   return props.movieItem.author?.memberName || props.movieItem.authorName || ''
 })
 
+const authorAvatar = computed(() => {
+  return resolveAssetUrl(props.movieItem.authorAvatar || props.movieItem.author?.avatar || '')
+})
+
+const authorBiliLink = computed(() => {
+  return props.movieItem.authorSpaceUrl || props.movieItem.movieLink?.bilibili || ''
+})
+
+const openAuthorLink = () => {
+  if (process.client && authorBiliLink.value) window.open(authorBiliLink.value, '_blank')
+}
+
 const activityYear = computed(() => {
   return route.params.activityId?.toString() || props.movieItem.day?.toString() || ''
 })
@@ -232,6 +250,7 @@ const copyShareLink = async () => {
 
 const loadCanvasImage = async (src: string): Promise<HTMLImageElement | null> => {
   if (!src) return null
+  src = resolveAssetUrl(src)
   const tryLoad = (url: string): Promise<HTMLImageElement | null> =>
     new Promise(resolve => {
       const image = new Image()
@@ -521,20 +540,98 @@ const downloadPoster = () => {
 </script>
 
 <style lang="scss" scoped>
+.video-container-inner {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.content-area {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.mobile-card-meta {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mobile-author {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+}
+
+.author-avatar {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.author-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .topPannel {
-  height: 14rem;
+  flex: 1 1 auto;
+  min-height: 12rem;
+  height: auto;
   border-radius: 28px;
   overflow: hidden;
   margin: 4px 0;
 }
 
+.mobile-oper-bar {
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-bottom: 2px;
+}
+
 .operitem {
-  margin-right: 12px;
+  min-width: 44px;
+  min-height: 44px;
+  margin-right: 0;
   color: $themeColor;
+  border-radius: 999px;
+  justify-content: center;
+  touch-action: manipulation;
 }
 
 .title {
   @include showLine(2);
+  word-break: break-word;
+}
+
+@media (max-width: 420px) {
+  .topPannel {
+    min-height: 10rem;
+    border-radius: 18px;
+  }
+
+  .content-area .title {
+    font-size: 1rem;
+  }
+
+  .author-name {
+    max-width: 46vw;
+    font-size: 0.95rem;
+  }
 }
 </style>
 
@@ -588,6 +685,7 @@ const downloadPoster = () => {
 }
 
 .share-popper.el-popper {
+  max-width: calc(100vw - 16px) !important;
   border: 1px solid rgba(245, 198, 95, 0.34) !important;
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
@@ -597,6 +695,14 @@ const downloadPoster = () => {
   .el-popper__arrow::before {
     border-color: rgba(245, 198, 95, 0.34) !important;
     background: rgba(11, 7, 1, 0.96) !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .share-popover {
+    .share-actions {
+      flex-wrap: wrap;
+    }
   }
 }
 </style>

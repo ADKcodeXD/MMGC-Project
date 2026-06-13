@@ -13,6 +13,7 @@ import type {
   StatisticsAuthor,
   SysConfig,
   TrackOverviewData,
+  TrackRecord,
   I18N
 } from '../types'
 import { del, get, post, put } from './client'
@@ -29,6 +30,8 @@ export const statisticsApi = {
     get<SiteTrafficItem[]>('/statistics/siteTraffic', { days }),
   trackOverview: (days = 7) =>
     get<TrackOverviewData>('/statistics/trackOverview', { days }),
+  trackList: (params: PageParams & { eventType?: string; eventKey?: string; pageUrl?: string }) =>
+    get<PageResult<TrackRecord>>('/statistics/trackList', params),
   sitemapOverview: () =>
     get<SitemapOverviewData>('/statistics/sitemapOverview')
 }

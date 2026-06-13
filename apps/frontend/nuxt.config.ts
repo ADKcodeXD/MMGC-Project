@@ -7,7 +7,7 @@ export default defineNuxtConfig({
     head: {
       title: 'MMGC - Mirai Mad Team',
       meta: [
-        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content' },
         {
           hid: 'description',
           name: 'description',

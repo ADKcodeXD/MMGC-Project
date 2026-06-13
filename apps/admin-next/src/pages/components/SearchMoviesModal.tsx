@@ -105,9 +105,9 @@ export default function SearchMoviesModal({ open, onClose, activityId, targetDay
     )
 
     return (
-      <Card key={item.movieId} hoverable bodyStyle={{ padding: 12 }} style={{ marginBottom: 12, opacity: isBoundToCurrent ? 0.6 : 1 }}>
-        <div style={{ display: 'flex', gap: 16 }}>
-          <div style={{ width: 160, height: 90, background: '#000', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+      <Card key={item.movieId} hoverable className="movie-picker-card" bodyStyle={{ padding: 12 }} style={{ marginBottom: 12, opacity: isBoundToCurrent ? 0.6 : 1 }}>
+        <div className="movie-picker-card-row" style={{ display: 'flex', gap: 16 }}>
+          <div className="movie-picker-cover" style={{ width: 160, height: 90, background: '#000', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
             <img src={item.movieCover} alt="cover" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           </div>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -126,16 +126,16 @@ export default function SearchMoviesModal({ open, onClose, activityId, targetDay
               )}
             </div>
           </div>
-          <div style={{ width: 140, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>{bindButton}</div>
+          <div className="movie-picker-action" style={{ width: 140, display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>{bindButton}</div>
         </div>
       </Card>
     )
   }
 
   const renderBoundCard = (item: MovieVo) => (
-    <Card key={item.movieId} hoverable bodyStyle={{ padding: 12 }} style={{ marginBottom: 12, borderLeft: '4px solid #1677ff' }}>
-      <div style={{ display: 'flex', gap: 12 }}>
-        <div style={{ width: 120, height: 68, background: '#000', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+    <Card key={item.movieId} hoverable className="movie-picker-card" bodyStyle={{ padding: 12 }} style={{ marginBottom: 12, borderLeft: '4px solid #1677ff' }}>
+      <div className="movie-picker-card-row" style={{ display: 'flex', gap: 12 }}>
+        <div className="movie-picker-cover small" style={{ width: 120, height: 68, background: '#000', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
           <img src={item.movieCover} alt="cover" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
@@ -174,12 +174,13 @@ export default function SearchMoviesModal({ open, onClose, activityId, targetDay
 
         <Col xs={24} md={16} style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: '16px 24px', background: '#fff', borderBottom: '1px solid #eef0f4' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center' }}>
+            <div className="movie-picker-toolbar" style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: 16 }}>从片库选择候选视频</h3>
                 <div style={{ fontSize: 13, color: '#999', marginTop: 4 }}>默认只看未绑定视频，必要时可切换查看全部。</div>
               </div>
               <Input.Search
+                className="movie-picker-search"
                 placeholder="搜索视频名称、作者、简介"
                 allowClear
                 enterButton={<SearchOutlined />}
@@ -228,7 +229,7 @@ export default function SearchMoviesModal({ open, onClose, activityId, targetDay
             )}
           </div>
 
-          <div style={{ padding: '16px 24px', background: '#fff', borderTop: '1px solid #eef0f4', display: 'flex', justifyContent: 'flex-end' }}>
+          <div className="movie-picker-footer" style={{ padding: '16px 24px', background: '#fff', borderTop: '1px solid #eef0f4', display: 'flex', justifyContent: 'flex-end' }}>
             <Pagination
               current={page}
               pageSize={20}

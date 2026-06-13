@@ -42,7 +42,8 @@ const enterActivity = () => {
 <style lang="scss" scoped>
 .welcome-container {
   width: 100vw;
-  height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -50,6 +51,7 @@ const enterActivity = () => {
   background-size: cover;
   background-position: center;
   overflow: hidden;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
 }
 
 .content {

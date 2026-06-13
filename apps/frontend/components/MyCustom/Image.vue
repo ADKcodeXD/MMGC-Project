@@ -1,5 +1,5 @@
 <template>
-  <ElImage :fit="fit" :lazy="isLazy" :src="isAdd ? quatily : img || ''" @load="$emit('load')">
+  <ElImage :fit="fit" :lazy="isLazy" :src="isAdd ? quatily : displayImg" @load="$emit('load')">
     <template #placeholder>
       <div class="gray">
         <MyCustomLoading />
@@ -13,7 +13,7 @@
   </ElImage>
 </template>
 <script setup lang="ts">
-import { calcZip } from '~~/utils'
+import { calcZip, resolveAssetUrl } from '~~/utils'
 
 interface MyElimageProp {
   img?: string | null // 图片的链接
@@ -32,6 +32,10 @@ defineEmits(['load'])
 
 const quatily = computed(() => {
   return calcZip(props.img || '', props.zip)
+})
+
+const displayImg = computed(() => {
+  return resolveAssetUrl(props.img)
 })
 
 /**

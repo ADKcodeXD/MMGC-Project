@@ -93,6 +93,8 @@ export const movieSchema = new mongoose.Schema<MovieModel>(
     movieDownloadLink: { type: Object, default: null },
     authorId: { type: Number, default: null },
     authorName: { type: String, default: null },
+    authorAvatar: { type: String, default: null },
+    authorSpaceUrl: { type: String, default: null },
     realPublishTime: { type: Date, default: null },
     expectPlayTime: { type: Date, default: null },
     activityId: { type: Number, default: null },
@@ -102,7 +104,8 @@ export const movieSchema = new mongoose.Schema<MovieModel>(
     likeNums: { type: Number, default: 0 },
     viewNums: { type: Number, default: 0 },
     commentNums: { type: Number, default: 0 },
-    pollNums: { type: Number, default: 0 }
+    pollNums: { type: Number, default: 0 },
+    updateTime: { type: Number, default: null }
   },
   { collection: 'movies' }
 )
@@ -214,6 +217,7 @@ export const trackSchema = new mongoose.Schema(
     eventType: { type: String, default: 'pv' },
     eventKey: { type: String, default: null },
     eventData: { type: mongoose.Schema.Types.Mixed, default: null },
+    visitorId: { type: String, default: null },
     ip: { type: String, default: null },
     userAgent: { type: String, default: null },
     createTime: { type: Number, default: Date.now }

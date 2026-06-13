@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Alert, App, Avatar, Button, Card, Col, DatePicker, Form, Input, InputNumber, Radio, Row, Select, Space, Tabs } from 'antd'
 import dayjs from 'dayjs'
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { activityApi, bilibiliApi, movieApi } from '../api/modules'
 import I18nFormItem from '../components/I18nFormItem'
 import QiniuUpload from '../components/QiniuUpload'
@@ -40,6 +40,8 @@ async function fetchMovieDetailWithFallback(movieId: number) {
 export default function MovieEdit() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const returnTo = (location.state as { returnTo?: string } | null)?.returnTo || '/movies'
   const [form] = Form.useForm()
   const { message } = App.useApp()
   const queryClient = useQueryClient()
@@ -87,6 +89,7 @@ export default function MovieEdit() {
         day: d.day,
         authorName: d.authorName || d.author?.memberName,
         authorAvatar: d.authorAvatar || d.author?.avatar,
+        authorSpaceUrl: d.authorSpaceUrl || d.movieLink?.bilibili,
         authorId: d.authorId
       })
     }
@@ -113,6 +116,7 @@ export default function MovieEdit() {
         day: values.day || null,
         authorName: values.authorName || null,
         authorAvatar: values.authorAvatar || null,
+        authorSpaceUrl: values.authorSpaceUrl || null,
         authorId: values.authorId || null
       }
       return isCreate ? movieApi.save(payload) : movieApi.update({ ...payload, movieId: values.movieId! })
@@ -120,7 +124,7 @@ export default function MovieEdit() {
     onSuccess: () => {
       message.success(isCreate ? '视频已添加' : '视频已更新')
       queryClient.invalidateQueries({ queryKey: ['movies'] })
-      navigate('/movies')
+      navigate(returnTo)
     },
     onError: error => message.error(error.message)
   })
@@ -140,6 +144,7 @@ export default function MovieEdit() {
       setBiliAuthor(info)
       form.setFieldValue('authorName', info.name)
       form.setFieldValue('authorAvatar', info.face)
+      form.setFieldValue('authorSpaceUrl', url)
       form.setFieldValue(['movieLink', 'bilibili'], url)
       message.success('已抓取 B 站作者信息')
     } catch (error: any) {
@@ -160,7 +165,7 @@ export default function MovieEdit() {
       <div className="page-heading">
         <div>
           <h1>
-            <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate('/movies')} />
+            <Button type="text" icon={<ArrowLeftOutlined />} onClick={() => navigate(returnTo)} />
             {isCreate ? '添加视频' : '编辑视频'}
           </h1>
           <p style={{ marginLeft: 32 }}>管理视频标题、简介、封面、播放源以及所属活动与天数。</p>
@@ -205,6 +210,11 @@ export default function MovieEdit() {
                     <Avatar src={authorAvatar || biliAuthor?.face} />
                     <span style={{ color: '#6b7280', fontSize: 13 }}>保存后会同步到前台作者信息展示</span>
                   </Space>
+                </Col>
+                <Col span={24}>
+                  <Form.Item name="authorSpaceUrl" label="作者空间地址">
+                    <Input placeholder="https://space.bilibili.com/..." />
+                  </Form.Item>
                 </Col>
                 <Col span={24}>
                   <Form.Item label="B 站空间快捷抓取">
@@ -257,12 +267,12 @@ export default function MovieEdit() {
               <Row gutter={16}>
                 <Col span={24} md={12}>
                   <Form.Item name="realPublishTime" label="实际发布时间">
-                    <DatePicker showTime style={{ width: '100%' }} />
+                    <DatePicker showTime inputReadOnly style={{ width: '100%' }} />
                   </Form.Item>
                 </Col>
                 <Col span={24} md={12}>
                   <Form.Item name="expectPlayTime" label="期望公开时间">
-                    <DatePicker showTime style={{ width: '100%' }} />
+                    <DatePicker showTime inputReadOnly style={{ width: '100%' }} />
                   </Form.Item>
                 </Col>
               </Row>
@@ -337,7 +347,7 @@ export default function MovieEdit() {
         </Row>
 
         <div className="floating-actions">
-          <Button size="large" style={{ minWidth: 110 }} onClick={() => navigate('/movies')}>取消</Button>
+          <Button size="large" style={{ minWidth: 110 }} onClick={() => navigate(returnTo)}>取消</Button>
           <Button size="large" type="primary" htmlType="submit" loading={saveMutation.isPending} style={{ minWidth: 150, height: 44 }}>
             保存视频
           </Button>

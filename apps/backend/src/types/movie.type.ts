@@ -20,6 +20,10 @@ declare module 'Movie' {
      */
     authorAvatar: null | string
     /**
+     * External author profile URL, usually Bilibili space URL.
+     */
+    authorSpaceUrl: null | string
+    /**
      * 评论次数
      */
     commentNums: number
@@ -27,6 +31,10 @@ declare module 'Movie' {
      * 上传时间 自动生成
      */
     createTime: null | string | number
+    /**
+     * Last update time.
+     */
+    updateTime: null | string | number
     /**
      * 假设关联了活动 那么这个movie就会有所属日
      */
@@ -100,6 +108,7 @@ declare module 'Movie' {
         | 'authorId'
         | 'authorName'
         | 'authorAvatar'
+        | 'authorSpaceUrl'
         | 'realPublishTime'
         | 'expectPlayTime'
         | 'activityId'

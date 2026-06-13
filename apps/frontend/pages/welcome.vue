@@ -207,7 +207,8 @@ const enterActivity = () => {
 <style lang="scss" scoped>
 .welcome-container {
   width: 100vw;
-  height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -216,6 +217,7 @@ const enterActivity = () => {
   background-position: center;
   overflow: hidden;
   position: relative;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
 
   .background-video {
     position: absolute;

@@ -174,6 +174,7 @@
 <script setup lang="ts">
 import type { MovieVo } from '~~/types/movie.type'
 import { useGlobalStore } from '~~/stores/global'
+import { resolveAssetUrl } from '~~/utils'
 
 const globalStore = useGlobalStore()
 const { $track } = useNuxtApp()
@@ -254,11 +255,11 @@ const authorName = computed(() => {
 })
 
 const authorAvatar = computed(() => {
-  return props.movieItem.authorAvatar || props.movieItem.author?.avatar || ''
+  return resolveAssetUrl(props.movieItem.authorAvatar || props.movieItem.author?.avatar || '')
 })
 
 const authorBiliLink = computed(() => {
-  return props.movieItem.movieLink?.bilibili || ''
+  return props.movieItem.authorSpaceUrl || props.movieItem.movieLink?.bilibili || ''
 })
 
 const openAuthorLink = () => {
@@ -291,6 +292,7 @@ const copyShareLink = async () => {
 
 const loadCanvasImage = async (src: string): Promise<HTMLImageElement | null> => {
   if (!src) return null
+  src = resolveAssetUrl(src)
   // 必须带 crossOrigin='anonymous' 加载，否则 canvas 会被污染导致 toDataURL 报安全错误
   // 先用原始 URL 尝试
   const tryLoad = (url: string): Promise<HTMLImageElement | null> =>

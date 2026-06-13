@@ -14,8 +14,8 @@ export interface BiliUserInfo {
 }
 
 /**
- * 通过 UID 获取 B 站用户公开信息（头像 + 昵称）
- * 使用 /x/web-interface/card 接口，无需 WBI 签名
+ * 通过 UID 获取 B 站用户公开信息（头像 + 昵称）。
+ * 使用 /x/web-interface/card 接口，无需 WBI 签名。
  */
 export async function getBiliUserInfo(mid: number): Promise<BiliUserInfo | null> {
 	try {
@@ -38,7 +38,7 @@ export async function getBiliUserInfo(mid: number): Promise<BiliUserInfo | null>
 }
 
 /**
- * 下载 B 站头像图片到本地临时文件，返回 { filePath, fileName }
+ * 下载 B 站头像图片到本地临时文件，返回 { filePath, fileName }。
  */
 export async function downloadBiliFace(faceUrl: string): Promise<{ filePath: string; fileName: string } | null> {
 	try {

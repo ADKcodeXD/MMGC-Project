@@ -124,6 +124,12 @@ declare global {
     unboundOnly?: boolean | string
     /** 上传者id */
     uploader?: number
+    /** Author display name exact/partial filter */
+    authorName?: string
+    createTimeStart?: string | number
+    createTimeEnd?: string | number
+    updateTimeStart?: string | number
+    updateTimeEnd?: string | number
   }
 
   interface MMGCSysConfig {
@@ -133,6 +139,10 @@ declare global {
     enableWatermark?: boolean
     otherSettings?: string
     configType?: number
+    assetBaseUrl?: string
+    assetPrimaryBaseUrl?: string
+    assetGlobalBaseUrl?: string
+    assetRegion?: 'cn' | 'global'
   }
 
   const enum ROLE {

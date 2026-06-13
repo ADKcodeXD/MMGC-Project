@@ -164,7 +164,7 @@
               </p>
             </div>
             <p
-              class="ml-2 text-light-50 break-all overflow-auto"
+              class="movie-description ml-2 text-light-50 break-all overflow-auto"
               :title="movieDetail.movieDesc[locale] || movieDetail.movieDesc['cn']"
             >
               {{ t('descriable') }}：{{
@@ -256,6 +256,7 @@ import { getCommentList } from '~~/composables/apis/comment'
 import { useGlobalStore } from '~~/stores/global'
 import Image404 from '@/assets/img/NotFound.png'
 import type { MovieVo } from '~~/types/movie.type'
+import { resolveAssetUrl } from '~~/utils'
 
 const {
   total,
@@ -286,9 +287,11 @@ const authorDisplayName = computed(
   () => movieDetail.value?.authorName || movieDetail.value?.author?.memberName || ''
 )
 const authorAvatar = computed(
-  () => movieDetail.value?.authorAvatar || movieDetail.value?.author?.avatar || ''
+  () => resolveAssetUrl(movieDetail.value?.authorAvatar || movieDetail.value?.author?.avatar || '')
 )
-const authorBiliLink = computed(() => movieDetail.value?.movieLink?.bilibili || '')
+const authorBiliLink = computed(
+  () => movieDetail.value?.authorSpaceUrl || movieDetail.value?.movieLink?.bilibili || ''
+)
 
 const pollByLink = (movie: MovieVo, dayPollLink?: Sns | null) => {
   if (dayPollLink && (dayPollLink.bilibili || dayPollLink.twitter || dayPollLink.personalWebsite)) {
@@ -328,7 +331,7 @@ onMounted(async () => {
 @media screen and (min-width: 120px) {
   .body {
     width: 100%;
-    min-height: 100vh;
+    min-height: 100dvh;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -413,10 +416,22 @@ onMounted(async () => {
         display: flex;
         align-items: center;
         margin-bottom: 12px;
+        min-width: 0;
+
+        > .flex {
+          min-width: 0;
+        }
+
+        .right-title {
+          min-width: 0;
+        }
+
         .movie-title {
           font-size: $bigFontSize;
           color: white;
           font-weight: 600;
+          @include showLine(2);
+          word-break: break-word;
         }
         .left-arrow {
           border-radius: 9px;
@@ -488,6 +503,26 @@ onMounted(async () => {
           color: $tipColor;
           font-size: $smallFontSize;
         }
+      }
+
+      .author-link {
+        min-width: 0;
+        max-width: 42%;
+
+        .sub-title {
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+      }
+
+      .movie-description {
+        max-width: 100%;
+        max-height: 9rem;
+        line-height: 1.7;
+        word-break: break-word;
+        overflow-wrap: anywhere;
       }
     }
   }

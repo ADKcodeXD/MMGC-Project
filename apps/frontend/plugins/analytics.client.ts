@@ -4,6 +4,15 @@ import { nextTick } from 'vue'
 export default defineNuxtPlugin((nuxtApp) => {
   const router = useRouter()
 
+  const getVisitorId = () => {
+    const key = 'mmgc_visitor_id'
+    const existing = window.localStorage.getItem(key)
+    if (existing) return existing
+    const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+    window.localStorage.setItem(key, id)
+    return id
+  }
+
   const trackEvent = (eventType: 'pv' | 'click', eventKey?: string, eventData?: any) => {
     if (!process.client) return
     const { apiPrefix } = useRuntimeConfig().public
@@ -18,8 +27,10 @@ export default defineNuxtPlugin((nuxtApp) => {
         pageUrl: window.location.pathname + window.location.search,
         eventType,
         eventKey,
-        eventData
-      })
+        eventData,
+        visitorId: getVisitorId()
+      }),
+      keepalive: true
     }).catch((err) => {
       // Fail silently to avoid interrupting user flows
       console.error('Analytics tracking failed:', err)

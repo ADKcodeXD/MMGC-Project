@@ -184,3 +184,15 @@ Replace the old Vben admin in `apps/MMGCBACK` with a lighter React admin while p
 ## Current Next Step
 
 Continue old-admin parity for activity edit staff/sponsor binding UX. Server-side unbound video filtering is now available through `/movie/getAllMovie?unboundOnly=true`.
+
+Recently completed:
+
+- [x] Persist video list filter/pagination/sort state in URL when moving between list and edit pages.
+- [x] Expand new admin video filters and visible metadata for author, uploader, upload time, update time, and status.
+- [x] Add raw tracking event visibility in new admin statistics.
+- [x] Persist Bilibili-fetched author avatar and author space URL for frontend display.
+- [x] Improve frontend and new admin mobile viewport, long text, floating action, and picker/drawer usability.
+
+Follow-up validation:
+
+- [ ] Smoke-test frontend and `/newAdmin` on real iOS Safari and Android Chrome, including browser address bar collapse, keyboard opening, date picker, select dropdown, drawer, video detail, and video edit save flows.

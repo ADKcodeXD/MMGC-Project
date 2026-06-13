@@ -46,7 +46,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { calcZip } from '~~/utils'
+import { calcZip, resolveAssetUrl } from '~~/utils'
 import { useGlobalStore } from '~~/stores/global'
 import Hls from 'hls.js'
 import miraiLogo from '~~/assets/img/mirai.png'
@@ -183,9 +183,10 @@ function getSourceType(url: string) {
 }
 
 function createVideoSource(url: string, label: string): VideoSource {
+  const src = resolveAssetUrl(url)
   return {
-    src: url,
-    type: getSourceType(url),
+    src,
+    type: getSourceType(src),
     label
   }
 }

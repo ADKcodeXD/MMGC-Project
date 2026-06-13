@@ -144,6 +144,10 @@ declare global {
     isVideoPlay?: boolean
     otherSettings?: string
     configType?: number
+    assetBaseUrl?: string
+    assetPrimaryBaseUrl?: string
+    assetGlobalBaseUrl?: string
+    assetRegion?: 'cn' | 'global'
   }
   export interface ConfigVo {
     currentActivityId: number
@@ -151,6 +155,10 @@ declare global {
     isVideoPlay: boolean
     otherSettings: string | JSON
     configType: string
+    assetBaseUrl?: string
+    assetPrimaryBaseUrl?: string
+    assetGlobalBaseUrl?: string
+    assetRegion?: 'cn' | 'global'
   }
 }
 export {}

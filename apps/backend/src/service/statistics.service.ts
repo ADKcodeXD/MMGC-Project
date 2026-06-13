@@ -183,6 +183,7 @@ export default class StatisticsService extends BaseService {
       eventType: params.eventType || 'pv',
       eventKey: params.eventKey || null,
       eventData: params.eventData || null,
+      visitorId: params.visitorId || null,
       ip: params.ip || null,
       userAgent: params.userAgent || null,
       createTime: Date.now()
@@ -199,8 +200,8 @@ export default class StatisticsService extends BaseService {
       Track.countDocuments({ ...match, eventType: 'pv' }),
       Track.countDocuments(match),
       Track.aggregate([
-        { $match: match },
-        { $group: { _id: '$ip' } },
+        { $match: { ...match, eventType: 'pv' } },
+        { $group: { _id: { $ifNull: ['$visitorId', '$ip'] } } },
         { $match: { _id: { $ne: null } } },
         { $count: 'total' }
       ]),
@@ -213,7 +214,7 @@ export default class StatisticsService extends BaseService {
               eventType: '$eventType'
             },
             count: { $sum: 1 },
-            ips: { $addToSet: '$ip' }
+            visitors: { $addToSet: { $ifNull: ['$visitorId', '$ip'] } }
           }
         },
         { $sort: { '_id.date': 1 } }
@@ -224,7 +225,7 @@ export default class StatisticsService extends BaseService {
           $group: {
             _id: '$pageUrl',
             pv: { $sum: 1 },
-            ips: { $addToSet: '$ip' }
+            visitors: { $addToSet: { $ifNull: ['$visitorId', '$ip'] } }
           }
         },
         { $sort: { pv: -1 } },
@@ -244,8 +245,10 @@ export default class StatisticsService extends BaseService {
       const row = dailyMap.get(date) || { date, pv: 0, click: 0, uvSet: new Set<string>() }
       if (item?._id?.eventType === 'pv') row.pv += item.count || 0
       if (item?._id?.eventType === 'click') row.click += item.count || 0
-      for (const ip of item.ips || []) {
-        if (ip) row.uvSet.add(ip)
+      if (item?._id?.eventType === 'pv') {
+        for (const visitor of item.visitors || []) {
+          if (visitor) row.uvSet.add(visitor)
+        }
       }
       dailyMap.set(date, row)
     }
@@ -260,7 +263,7 @@ export default class StatisticsService extends BaseService {
     const topPages = pageAgg.map(item => ({
       pageUrl: item._id || '/',
       pv: item.pv || 0,
-      uv: (item.ips || []).filter(Boolean).length
+      uv: (item.visitors || []).filter(Boolean).length
     }))
 
     return {
@@ -269,6 +272,36 @@ export default class StatisticsService extends BaseService {
       totalEvents: eventTotal,
       daily,
       topPages
+    }
+  }
+
+  async getTrackList(pageParams: PageParams & { eventType?: string; eventKey?: string; pageUrl?: string }) {
+    const page = Number(pageParams.page || 1)
+    const pageSize = Number(pageParams.pageSize || 20)
+    const filter: Record<string, any> = {}
+
+    if (pageParams.eventType) filter.eventType = pageParams.eventType
+    if (pageParams.eventKey) filter.eventKey = { $regex: new RegExp(pageParams.eventKey, 'i') }
+    if (pageParams.pageUrl) filter.pageUrl = { $regex: new RegExp(pageParams.pageUrl, 'i') }
+    if (pageParams.keyword) {
+      const reg = new RegExp(pageParams.keyword, 'i')
+      filter.$or = [{ eventKey: { $regex: reg } }, { pageUrl: { $regex: reg } }, { visitorId: { $regex: reg } }]
+    }
+
+    const total = await Track.countDocuments(filter)
+    const result = await Track.find(filter)
+      .sort({ createTime: -1 })
+      .skip((page - 1) * pageSize)
+      .limit(pageSize)
+      .lean()
+
+    return {
+      result: result.map((item: any) => ({
+        ...item,
+        createTime: item.createTime ? formatTime(item.createTime) : null
+      })),
+      total,
+      page
     }
   }
 

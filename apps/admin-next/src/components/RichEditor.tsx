@@ -58,7 +58,7 @@ export default function RichEditor({ value, onChange }: RichEditorProps) {
   }, [editor])
 
   return (
-    <div style={{ border: '1px solid #ccc', zIndex: 100 }}>
+    <div className="rich-editor" style={{ border: '1px solid #ccc', zIndex: 100 }}>
       <Toolbar
         editor={editor}
         defaultConfig={toolbarConfig}

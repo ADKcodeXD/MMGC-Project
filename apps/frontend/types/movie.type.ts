@@ -21,6 +21,10 @@ export interface MovieModel {
    */
   authorAvatar: null | string
   /**
+   * External author profile URL, usually Bilibili space URL.
+   */
+  authorSpaceUrl: null | string
+  /**
    * 评论次数
    */
   commentNums: number
@@ -102,6 +106,7 @@ export type MovieParams = Pick<
       | 'authorId'
       | 'authorName'
       | 'authorAvatar'
+      | 'authorSpaceUrl'
       | 'realPublishTime'
       | 'expectPlayTime'
       | 'activityId'

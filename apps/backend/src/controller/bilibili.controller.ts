@@ -35,4 +35,5 @@ export default class BilibiliController {
 
 		return Result.success(info)
 	}
+
 }

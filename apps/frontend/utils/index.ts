@@ -1,3 +1,5 @@
+import { useGlobalStore } from '~~/stores/global'
+
 export const setItem = (key: string, item: any): void => {
   if (typeof item === 'object') {
     localStorage.setItem(key, JSON.stringify(item))
@@ -27,7 +29,46 @@ export const removeItem = (key: string): void => {
   localStorage.removeItem(key)
 }
 
+const DEFAULT_ASSET_BASE_URL = 'https://assets.mirai-mad.com'
+
+const stripTrailingSlash = (value = '') => value.replace(/\/+$/, '')
+
+const getUrlHost = (value?: string) => {
+  if (!value) return ''
+  try {
+    return new URL(value).host
+  } catch {
+    return ''
+  }
+}
+
+export const resolveAssetUrl = (url?: string | null) => {
+  if (!url) return ''
+  try {
+    const globalStore = useGlobalStore()
+    const assetBaseUrl = stripTrailingSlash(globalStore.config?.assetBaseUrl || DEFAULT_ASSET_BASE_URL)
+    const primaryBaseUrl = stripTrailingSlash(
+      globalStore.config?.assetPrimaryBaseUrl || DEFAULT_ASSET_BASE_URL
+    )
+    const currentUrl = new URL(url)
+    const assetBase = new URL(assetBaseUrl)
+    const primaryHosts = new Set([
+      getUrlHost(primaryBaseUrl),
+      getUrlHost(DEFAULT_ASSET_BASE_URL)
+    ])
+
+    if (!primaryHosts.has(currentUrl.host)) return url
+
+    currentUrl.protocol = assetBase.protocol
+    currentUrl.host = assetBase.host
+    return currentUrl.toString()
+  } catch {
+    return url
+  }
+}
+
 export const calcZip = (img: string, key: string) => {
+  img = resolveAssetUrl(img)
   let quality
   const RegQiniu = new RegExp(/^http(s|):\/\/assets.*\/[0-9a-zA-Z-]*.(jpeg|jpg|png|webp|gif)$/, 'i')
   const RegTencent = new RegExp(

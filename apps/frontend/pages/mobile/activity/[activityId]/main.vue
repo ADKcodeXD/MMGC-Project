@@ -30,16 +30,20 @@
           </template>
         </var-menu-select>
 
-        <div class="h-full p-4" v-if="movies.length">
-          <div v-if="activeVideo && activeVideo.movieId" class="flex-1" :key="activeVideo.movieId">
+        <div class="mobile-video-workspace" v-if="movies.length">
+          <div
+            v-if="activeVideo && activeVideo.movieId"
+            class="active-video-panel"
+            :key="activeVideo.movieId"
+          >
             <MovieShowItemMobile
               :movie-item="activeVideo"
               :day-poll-link="currentDayItem?.dayPollLink"
             />
           </div>
           <div v-else></div>
-          <p class="title">Day {{ currentDay }}{{ $t('works') }}</p>
-          <div class="flex overflow-auto py-2">
+          <p class="title work-title">Day {{ currentDay }}{{ $t('works') }}</p>
+          <div class="mobile-movie-strip">
             <div
               class="movie-list-card mx-2 flex-shrink-0"
               :class="{ active: activeVideo.movieId === movieItem.movieId }"
@@ -51,7 +55,7 @@
                 <MyCustomImage :img="movieItem.movieCover" />
               </div>
               <div class="flex justify-between items-center mt-2">
-                <p style="max-width: 75%; margin-right: 8px" class="sub-title">
+                <p class="sub-title movie-card-title">
                   {{ movieItem['movieName'][locale] || movieItem['movieName']['cn'] }}
                 </p>
                 <MemberPop
@@ -188,9 +192,52 @@ watch(
   min-width: 320px;
   width: 100%;
   height: 100%;
+  min-height: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+
+  .video-container {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .mobile-video-workspace {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .active-video-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .work-title {
+    flex: 0 0 auto;
+    margin: 0;
+    @include showLine(1);
+  }
+
+  .mobile-movie-strip {
+    flex: 0 0 auto;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 6px 0 4px;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
 
   .background {
     position: absolute;
@@ -205,14 +252,22 @@ watch(
   }
 
   .movie-list-card {
-    width: 60%;
+    width: min(68vw, 260px);
     border-radius: 12px;
     border: 1px solid var(--el-border-color-light);
     display: flex;
     flex-direction: column;
     padding: 8px;
+    scroll-snap-align: center;
     &.active {
       border: 1px solid $themeColor;
+    }
+
+    .movie-card-title {
+      max-width: 75%;
+      min-width: 0;
+      margin-right: 8px;
+      @include showLine(2);
     }
   }
 }

@@ -405,3 +405,32 @@
 - Updated the frontend `/api` proxy middleware to skip `/api/__sitemap__/...`, preventing the sitemap source from being forwarded to the backend and returning `401 Unauthorized`.
 - Confirmed the built Nuxt sitemap source remains `/__sitemap__/urls`, while the legacy `/api/__sitemap__/urls` route is also registered for old sitemap caches or stale deployed configs.
 - Validation: `corepack pnpm --filter mirai-offcial-website exec nuxi build` passed.
+
+### Video Management And Tracking Visibility
+
+- Expanded new admin video management filters: author name, uploader ID, public status, unbound-only, upload time, update time, activity/day, sorting, and pagination now persist through URL query state.
+- Made video cards open the edit/detail workflow directly while preserving delete/edit action buttons.
+- Added movie `authorSpaceUrl`, `authorAvatar` persistence, and `updateTime` support in backend movie schema, validation, service mapping, and admin edit forms.
+- Updated frontend movie author links to prefer `authorSpaceUrl`, falling back to the existing Bilibili video link for old data.
+- Added frontend visitor ID tracking and backend track record listing; admin statistics now shows raw tracking trigger records.
+- Validation:
+  - `corepack pnpm --filter @mmgc/admin-next run build` passed.
+  - `corepack pnpm --filter mmgc_backend run build` passed.
+  - `corepack pnpm --filter mirai-offcial-website exec nuxi build` passed.
+  - `corepack pnpm --filter mirai-offcial-website run build` was not usable on Windows because the existing script contains POSIX shell syntax after `nuxi build`.
+
+### Mobile Frontend And Admin Usability Pass
+
+- Reworked frontend mobile viewport handling to use dynamic viewport units and safe-area padding, reducing browser address/nav bar overlap on mobile browsers.
+- Tightened mobile video pages: flexible player height, scrollable detail content, safer long title/description wrapping, and touch-sized action controls.
+- Updated mobile video cards to use persisted Bilibili author avatar and author space URL when available.
+- Hardened new admin mobile controls:
+  - dynamic viewport shell height,
+  - safer drawer/modal/select/date-picker overflow,
+  - mobile-friendly filter controls and date inputs,
+  - fixed bottom action bar safe-area spacing,
+  - responsive video picker drawer cards and pagination,
+  - mobile-friendly rich editor toolbar.
+- Validation:
+  - `corepack pnpm --filter @mmgc/admin-next run build` passed.
+  - `corepack pnpm --filter mirai-offcial-website exec nuxi build` passed.

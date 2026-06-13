@@ -7,6 +7,6 @@
 <style lang="scss" scoped>
 .bg {
   width: 100vw;
-  height: 100vh;
+  height: 100dvh;
 }
 </style>

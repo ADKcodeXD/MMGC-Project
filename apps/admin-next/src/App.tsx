@@ -189,7 +189,7 @@ export default function App() {
   }, [location.pathname])
 
   return (
-    <Suspense fallback={<div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Spin size="large" /></div>}>
+    <Suspense fallback={<div style={{ width: '100vw', height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Spin size="large" /></div>}>
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/*" element={<RequireAuth />} />

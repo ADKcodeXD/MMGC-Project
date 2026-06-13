@@ -27,6 +27,12 @@ export type PageParams = {
   unboundOnly?: boolean
   sortRule?: string | null
   orderRule?: '' | 'reverse' | null
+  uploader?: number
+  authorName?: string
+  createTimeStart?: string
+  createTimeEnd?: string
+  updateTimeStart?: string
+  updateTimeEnd?: string
 }
 
 export type StaffItem = {
@@ -80,9 +86,10 @@ export type MovieVo = {
   sortIndex: number | null
   authorName?: string | null
   authorAvatar?: string | null
+  authorSpaceUrl?: string | null
   authorId?: number | null
   author?: MemberVo | null
-  uploader?: number | null
+  uploader?: number | MemberVo | null
   isPublic?: boolean | null
   viewNums?: number | null
   likeNums?: number | null
@@ -98,6 +105,7 @@ export type MovieVo = {
   expectPlayTime?: string | null
   isOrigin?: number | null
   createTime?: string
+  updateTime?: string | null
 }
 
 export type BillingDetails = {
@@ -142,6 +150,18 @@ export type TrackOverviewData = {
   totalEvents: number
   daily: TrackDailyItem[]
   topPages: TrackPageItem[]
+}
+
+export type TrackRecord = {
+  _id: string
+  pageUrl?: string | null
+  eventType: 'pv' | 'click' | string
+  eventKey?: string | null
+  eventData?: unknown
+  visitorId?: string | null
+  ip?: string | null
+  userAgent?: string | null
+  createTime?: string | null
 }
 
 export type SitemapRow = {

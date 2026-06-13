@@ -39,6 +39,8 @@ html {
 
 body {
   margin: 0;
+  overscroll-behavior-x: none;
+  -webkit-text-size-adjust: 100%;
 }
 
 #__nuxt {
@@ -50,7 +52,17 @@ body {
 html,
 body,
 #__nuxt {
-  height: calc(100vh - env(safe-area-inset-bottom));
+  min-height: 100%;
+  height: 100%;
+}
+
+@supports (height: 100dvh) {
+  html,
+  body,
+  #__nuxt {
+    min-height: 100dvh;
+    height: 100dvh;
+  }
 }
 
 a {
@@ -67,6 +79,20 @@ a {
 img {
   width: 100%;
   height: 100%;
+}
+
+button,
+a,
+[role='button'] {
+  touch-action: manipulation;
+}
+
+.el-dialog {
+  max-width: calc(100vw - 24px);
+}
+
+.el-popper {
+  max-width: calc(100vw - 16px);
 }
 
 ::-webkit-scrollbar {

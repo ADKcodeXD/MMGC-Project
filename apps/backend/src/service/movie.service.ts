@@ -15,6 +15,15 @@ import { formatTime } from '~/common/utils/moment'
 import { IpUtils } from '~/common/utils/ipUtils'
 import CommentService from './comment.service'
 
+const dateRangeFilter = (start?: string | number, end?: string | number) => {
+  const range: Record<string, number> = {}
+  const startTime = start ? new Date(start).getTime() : NaN
+  const endTime = end ? new Date(end).getTime() : NaN
+  if (!Number.isNaN(startTime)) range.$gte = startTime
+  if (!Number.isNaN(endTime)) range.$lte = endTime
+  return Object.keys(range).length > 0 ? range : null
+}
+
 const aggreFilter = (filter: any, additionFields?: any[]) => [
   {
     $lookup: {
@@ -130,6 +139,7 @@ export default class MovieService extends BaseService {
     model.movieId = await this.incrementService.incrementId('movies', { model: Movie, key: 'movieId' })
     model.uploader = memberId
     model.createTime = Date.now()
+    model.updateTime = Date.now()
 
     const res = await new Movie(model).save()
     if (res) {
@@ -230,6 +240,16 @@ export default class MovieService extends BaseService {
       _filter.uploader = parseInt(movieParams.uploader.toString())
     }
 
+    if (movieParams.authorName) {
+      _filter.authorName = { $regex: new RegExp(movieParams.authorName, 'i') }
+    }
+
+    const createTimeRange = dateRangeFilter(movieParams.createTimeStart, movieParams.createTimeEnd)
+    if (createTimeRange) _filter.createTime = createTimeRange
+
+    const updateTimeRange = dateRangeFilter(movieParams.updateTimeStart, movieParams.updateTimeEnd)
+    if (updateTimeRange) _filter.updateTime = updateTimeRange
+
     const unboundOnly =
       movieParams.unboundOnly === true ||
       movieParams.unboundOnly === 'true' ||
@@ -268,7 +288,10 @@ export default class MovieService extends BaseService {
     // 保证拥有
     const movie = await this.movieModel.findOne({ movieId: movieParams.movieId })
     if (movie) {
-      const flag = await this.movieModel.updateOne({ movieId: movieParams.movieId }, movieParams)
+      const flag = await this.movieModel.updateOne(
+        { movieId: movieParams.movieId },
+        { ...movieParams, updateTime: Date.now() }
+      )
       if (flag) {
         return true
       }
@@ -364,6 +387,7 @@ export default class MovieService extends BaseService {
     }
 
     if (vo.realPublishTime) vo.realPublishTime = formatTime(movieModel.realPublishTime)
+    if (vo.updateTime) vo.updateTime = formatTime(movieModel.updateTime)
     vo.uploader = movieModel.uploader as any
 
     vo.createTime = formatTime(movieModel.createTime)

@@ -189,21 +189,35 @@ const isCurrent = (path: string) => {
 
 <style lang="scss" scoped>
 .body {
+  min-height: 100%;
   height: 100%;
   width: 100%;
   display: flex;
   flex-direction: column;
   position: relative;
   z-index: 1;
+  overflow: hidden;
 }
 
 .heightss {
-  height: calc(100vh - 98px);
+  width: 100%;
+  min-height: 0;
+  height: calc(100dvh - 64px);
+  padding-bottom: env(safe-area-inset-bottom);
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+.heightss :deep(> *) {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
 .bg {
   width: 100vw;
   height: 100%;
+  min-height: 100dvh;
   overflow: hidden;
   z-index: -1;
   background-image: url(@/assets/2024/bgmobile.png);

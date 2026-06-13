@@ -1,7 +1,7 @@
 import { MemberVo } from 'Member'
 import { StatisticsParams, StatisticsUpdateParams } from 'Statistics'
 import { Auth } from '~/common/decorator/auth'
-import { Controller, PostMapping, Body, User, Autowired, DeleteMapping, Param, GetMapping, Ctx, Query } from '~/common/decorator/decorator'
+import { Controller, PostMapping, Body, User, Autowired, DeleteMapping, Param, GetMapping, Ctx, Query, QueryAll } from '~/common/decorator/decorator'
 import Result from '~/common/result'
 import { addNewAuthorParamsValidate, updateAuthorParamsValidate } from '~/common/validate/validate'
 import { Validtor } from '~/middleware/ajv.middleware'
@@ -81,6 +81,13 @@ export default class StatisticsController {
   @GetMapping('/trackOverview')
   async getTrackOverview(@Query('days') days?: string) {
     const res = await this.statisticsService.getTrackOverview(days ? parseInt(days) : 7)
+    return Result.success(res)
+  }
+
+  @GetMapping('/trackList')
+  @Auth([ROLE.ADMIN, ROLE.SUBADMIN, ROLE.COMMITTER, ROLE.GROUPMEMBER], '/trackList')
+  async getTrackList(@QueryAll() pageParams: PageParams & { eventType?: string; eventKey?: string; pageUrl?: string }) {
+    const res = await this.statisticsService.getTrackList(pageParams)
     return Result.success(res)
   }
 

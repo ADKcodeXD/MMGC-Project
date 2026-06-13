@@ -2,8 +2,8 @@ import { DeleteOutlined, EditOutlined, PlusOutlined, ReloadOutlined } from '@ant
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { App, Button, Card, Form, Image, Input, InputNumber, Modal, Popconfirm, Select, Space, Table, Tag } from 'antd'
 import { useState } from 'react'
-import { authorApi } from '../api/modules'
-import type { StatisticsAuthor } from '../types'
+import { authorApi, statisticsApi } from '../api/modules'
+import type { StatisticsAuthor, TrackRecord } from '../types'
 
 type AuthorForm = {
   _id?: string
@@ -21,6 +21,9 @@ export default function Statistics() {
   const [editing, setEditing] = useState<StatisticsAuthor | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [page, setPage] = useState(1)
+  const [trackPage, setTrackPage] = useState(1)
+  const [trackEventType, setTrackEventType] = useState<string>()
+  const [trackKeyword, setTrackKeyword] = useState('')
   const [form] = Form.useForm<AuthorForm>()
   const queryClient = useQueryClient()
   const { message } = App.useApp()
@@ -28,6 +31,16 @@ export default function Statistics() {
   const authors = useQuery({
     queryKey: ['authorRank', keyword, sortRule, orderRule, page],
     queryFn: () => authorApi.rank({ page, pageSize: 20, keyword: keyword || undefined, sortRule, orderRule })
+  })
+
+  const trackRecords = useQuery({
+    queryKey: ['trackRecords', trackPage, trackEventType, trackKeyword],
+    queryFn: () => statisticsApi.trackList({
+      page: trackPage,
+      pageSize: 20,
+      eventType: trackEventType,
+      keyword: trackKeyword || undefined
+    })
   })
 
   const saveMutation = useMutation({
@@ -140,6 +153,70 @@ export default function Statistics() {
                   </Popconfirm>
                 </Space>
               )
+            }
+          ]}
+        />
+      </Card>
+
+      <Card
+        title="埋点触发记录"
+        style={{ marginTop: 24 }}
+        extra={
+          <Space wrap>
+            <Input.Search
+              placeholder="搜索页面、事件、访客"
+              allowClear
+              enterButton
+              onSearch={value => {
+                setTrackKeyword(value)
+                setTrackPage(1)
+              }}
+              style={{ width: 240 }}
+            />
+            <Select
+              allowClear
+              placeholder="事件类型"
+              value={trackEventType}
+              onChange={value => {
+                setTrackEventType(value)
+                setTrackPage(1)
+              }}
+              style={{ width: 120 }}
+              options={[{ label: 'PV', value: 'pv' }, { label: 'Click', value: 'click' }]}
+            />
+            <Button icon={<ReloadOutlined />} onClick={() => trackRecords.refetch()}>刷新</Button>
+          </Space>
+        }
+      >
+        <Table<TrackRecord>
+          rowKey="_id"
+          loading={trackRecords.isLoading}
+          dataSource={trackRecords.data?.result || []}
+          pagination={{
+            current: trackPage,
+            pageSize: 20,
+            total: trackRecords.data?.total || 0,
+            onChange: p => setTrackPage(p)
+          }}
+          scroll={{ x: 1100 }}
+          columns={[
+            { title: '触发时间', dataIndex: 'createTime', width: 170 },
+            {
+              title: '类型',
+              dataIndex: 'eventType',
+              width: 90,
+              render: value => <Tag color={value === 'pv' ? 'blue' : 'green'}>{String(value).toUpperCase()}</Tag>
+            },
+            { title: '事件', dataIndex: 'eventKey', width: 180 },
+            { title: '页面', dataIndex: 'pageUrl', ellipsis: true },
+            { title: '访客', dataIndex: 'visitorId', width: 180, ellipsis: true },
+            { title: 'IP', dataIndex: 'ip', width: 140 },
+            {
+              title: '数据',
+              dataIndex: 'eventData',
+              width: 220,
+              ellipsis: true,
+              render: value => value ? JSON.stringify(value) : '-'
             }
           ]}
         />

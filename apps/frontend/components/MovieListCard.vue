@@ -84,6 +84,7 @@
 </template>
 <script lang="ts" setup>
 import type { MovieVo } from '~~/types/movie.type'
+import { resolveAssetUrl } from '~~/utils'
 
 defineProps<{
   movieItem: MovieVo
@@ -96,8 +97,8 @@ const goToMovieDetail = (movieId: number) => {
   localeNaviGate(`/movie/${movieId}`)
 }
 const authorDisplayName = (movie: MovieVo) => movie.authorName || movie.author?.memberName || ''
-const authorAvatar = (movie: MovieVo) => movie.authorAvatar || movie.author?.avatar || ''
-const authorBiliLink = (movie: MovieVo) => movie.movieLink?.bilibili || ''
+const authorAvatar = (movie: MovieVo) => resolveAssetUrl(movie.authorAvatar || movie.author?.avatar || '')
+const authorBiliLink = (movie: MovieVo) => movie.authorSpaceUrl || movie.movieLink?.bilibili || ''
 </script>
 <style lang="scss" scoped>
 @media screen and (min-width: 320px) {
@@ -149,8 +150,15 @@ const authorBiliLink = (movie: MovieVo) => movie.movieLink?.bilibili || ''
         @include showLine(2);
       }
       .author-summary {
+        min-width: 0;
+        max-width: 58%;
         border-radius: 999px;
         padding: 2px 6px;
+
+        p:last-child {
+          min-width: 0;
+          @include showLine(1);
+        }
       }
       .author-avatar {
         width: 30px;

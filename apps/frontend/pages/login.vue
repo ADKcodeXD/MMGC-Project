@@ -188,7 +188,8 @@ const { isForgot, forgotForm, resetPwd, forgotRegister } = useForgotPwd()
     }
     .login-container {
       width: 90%;
-      height: 600px;
+      height: min(600px, calc(100dvh - 7rem - env(safe-area-inset-bottom)));
+      min-height: 0;
       background-color: rgba(70, 21, 2, 0.205);
       border-radius: 2rem;
       display: flex;

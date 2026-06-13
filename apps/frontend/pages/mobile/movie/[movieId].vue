@@ -247,7 +247,7 @@
             <p class="sub-title mr-4">{{ $t('author') }}:{{ authorDisplayName }}</p>
           </div>
           <p
-            class="ml-2 text-light-50 break-all overflow-auto"
+            class="movie-description ml-2 text-light-50 break-all overflow-auto"
             :title="movieDetail.movieDesc[locale] || movieDetail.movieDesc['cn']"
           >
             {{ t('descriable') }}：{{
@@ -384,6 +384,7 @@ import { getCommentList } from '~~/composables/apis/comment'
 import { useGlobalStore } from '~~/stores/global'
 import Image404 from '@/assets/img/NotFound.png'
 import type { MovieVo } from '~~/types/movie.type'
+import { resolveAssetUrl } from '~~/utils'
 
 const {
   total,
@@ -425,9 +426,11 @@ const authorDisplayName = computed(
   () => movieDetail.value?.authorName || movieDetail.value?.author?.memberName || ''
 )
 const authorAvatar = computed(
-  () => movieDetail.value?.authorAvatar || movieDetail.value?.author?.avatar || ''
+  () => resolveAssetUrl(movieDetail.value?.authorAvatar || movieDetail.value?.author?.avatar || '')
 )
-const authorBiliLink = computed(() => movieDetail.value?.movieLink?.bilibili || '')
+const authorBiliLink = computed(
+  () => movieDetail.value?.authorSpaceUrl || movieDetail.value?.movieLink?.bilibili || ''
+)
 
 const pollByLink = (movie: MovieVo, dayPollLink?: Sns | null) => {
   if (dayPollLink && (dayPollLink.bilibili || dayPollLink.twitter || dayPollLink.personalWebsite)) {
@@ -481,10 +484,17 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
+.desc-title {
+  max-width: calc(100vw - 176px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .body {
   width: 100%;
-  min-height: 100vh;
-  height: 100%;
+  min-height: 100dvh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -493,14 +503,34 @@ onMounted(async () => {
   background-size: cover;
   background-attachment: fixed;
   filter: brightness(0.8);
+  overflow: hidden;
   .all-wrapper {
-    height: calc(100% - 64px);
+    width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     overflow: auto;
-    padding: 12px;
+    padding: 12px 12px calc(16px + env(safe-area-inset-bottom));
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+
+    .desc-title {
+      max-width: calc(100vw - 172px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .sub-title {
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
     .author-link {
+      max-width: calc(100% - 16px);
       border-radius: 999px;
       padding: 4px 8px;
     }
@@ -516,7 +546,8 @@ onMounted(async () => {
       border-radius: 20px;
       overflow: hidden;
       width: 100%;
-      height: 600px;
+      height: clamp(210px, 56vw, 420px);
+      min-height: 0;
     }
     .mark {
       background-color: #ffacac;
@@ -526,7 +557,8 @@ onMounted(async () => {
       margin-right: 4px;
     }
     .movie-comment-area {
-      height: 100%;
+      width: 100%;
+      min-height: 320px;
       border-radius: 20px;
       background-color: #131313;
       padding: 16px;
@@ -582,11 +614,15 @@ onMounted(async () => {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
       font-size: $midFontSize;
       color: $themeColor;
       .download-or-other {
         display: flex;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
         .download {
           font-size: $bigFontSize;
           color: $themeColor;
@@ -597,7 +633,9 @@ onMounted(async () => {
       .operitem {
         border-radius: 35px;
         font-size: $smallFontSize;
-        padding: 4px 8px;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 6px 8px;
         cursor: pointer;
         position: relative;
         transition: all ease 0.3s;
@@ -612,6 +650,21 @@ onMounted(async () => {
           margin-left: 4px;
         }
       }
+    }
+
+    .infomation {
+      max-width: 100%;
+      flex-wrap: wrap;
+      gap: 4px 8px;
+    }
+
+    .movie-description {
+      max-width: calc(100% - 8px);
+      max-height: 10rem;
+      line-height: 1.65;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      -webkit-overflow-scrolling: touch;
     }
     .movie-list {
       overflow-x: auto;
