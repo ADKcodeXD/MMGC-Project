@@ -1,5 +1,11 @@
 # 环境配置说明
 
+完整部署指南：
+
+- AI agent 执行版：[`docs/deployment-ai-agent.md`](../docs/deployment-ai-agent.md)
+- 人类操作版：[`docs/deployment-human.md`](../docs/deployment-human.md)
+- Nginx 示例：[`env/nginx.mmgc.conf.example`](./nginx.mmgc.conf.example)
+
 ## 服务器 .env（项目根目录）
 
 部署时从**阿里云 ACR** 拉镜像（国内快），在项目根目录创建或编辑 `.env`，写入：

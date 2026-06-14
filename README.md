@@ -1,313 +1,327 @@
-<div align="center">
+# 活动网站解决方案
 
-<img src=".github/assets/banner.png" alt="MMGC Banner" width="100%" />
+MMGC Project 是面向活动官网、投稿展示、视频资源分发和后台运营管理的一套活动网站解决方案。项目以 `mirai-mad.com` 为主站入口，同时兼顾国内访问、海外访问、视频与静态资源 CDN 分发、API 源站直连和 Admin 后台管理。
 
-# 🎬 MMGC — Mirai Mad Global Community
+当前仓库采用 pnpm workspace 管理，包含前台站点、服务端 API、旧 Admin 后台和新 Admin 模板预留目录。
 
-**未来 MAD 全球社区 · 活動管理 & 影像展示平台**
+## 线上域名与部署链路
 
-[![Build & Deploy](https://github.com/ADKcodeXD/MMGC-Project/actions/workflows/deploy.yml/badge.svg)](https://github.com/ADKcodeXD/MMGC-Project/actions/workflows/deploy.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
-[![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
-[![Nuxt 3](https://img.shields.io/badge/Nuxt-3-00DC82?logo=nuxtdotjs&logoColor=white)](https://nuxt.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-6-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
-[![pnpm](https://img.shields.io/badge/pnpm-9-F69220?logo=pnpm&logoColor=white)](https://pnpm.io/)
+### 访问入口
 
-[**🌐 线上地址**](https://mirai-mad.com) · [**📖 文档**](#-快速开始) · [**🐛 提交 Issue**](https://github.com/ADKcodeXD/MMGC-Project/issues)
+| 域名 | 用途 | 说明 |
+| --- | --- | --- |
+| `mirai-mad.com` | 主站入口 | 国内用户优先走七牛云 CDN；海外用户由源站按 IP 判断后切换到 `global.mirai-mad.com` |
+| `global.mirai-mad.com` | 海外主站 | 接入 Cloudflare，缓存未命中时回源到七牛云，再到雅加达前端源站 |
+| `assets.mirai-mad.com` | 国内视频与静态资源 | 接入七牛云 CDN，最终回源到 KODO 对象存储 |
+| `assets-global.mirai-mad.com` | 海外视频与静态资源 | 接入 Cloudflare，缓存未命中访问七牛云 CDN，再回源到对象存储源站 |
+| API 源站 | 所有接口 | 前台、海外前台和 Admin 的 API 请求都直接访问源站 |
 
-</div>
+> `xx.xx.xx` 表示当前主站源站 IP 占位，实际部署时以服务器配置为准。
 
----
+### 国内链路
 
-## 📋 目录
+```mermaid
+flowchart LR
+  user_cn["国内用户"]
+  main_domain["mirai-mad.com"]
+  qiniu_main["七牛云 CDN<br/>主站加速"]
+  origin["源站<br/>xx.xx.xx"]
 
-- [✨ 项目简介](#-项目简介)
-- [🏗️ 系统架构](#️-系统架构)
-- [🛠️ 技术栈](#️-技术栈)
-- [📂 项目结构](#-项目结构)
-- [🚀 快速开始](#-快速开始)
-- [🐳 Docker 部署](#-docker-部署)
-- [⚙️ CI/CD 流水线](#️-cicd-流水线)
-- [🤝 贡献指南](#-贡献指南)
-- [📄 开源协议](#-开源协议)
+  asset_domain["assets.mirai-mad.com"]
+  qiniu_asset["七牛云 CDN<br/>资源加速"]
+  kodo["KODO 对象存储<br/>视频/图片/静态资源"]
 
----
+  api["API 源站<br/>/mmgcApi"]
 
-## ✨ 项目简介
-
-**MMGC (Mirai Mad Global Community)** 是未来 MAD 团队的官方活动管理 & 影像展示平台。平台支持多语言（中/英/日），提供从活动创建、作品投稿、成员管理到数据统计的完整生态。
-
-### 🎯 核心功能
-
-| 模块               | 说明                                                      |
-| ------------------ | --------------------------------------------------------- |
-| 🎉 **活动管理**    | 创建/管理 MAD 活动（MMGC 赛事），设置赛程、轮次、工作人员 |
-| 🎬 **作品展示**    | 影像作品管理，支持视频播放、Bilibili 数据同步             |
-| 👥 **成员系统**    | 社区成员注册、登录、个人主页、头像管理                    |
-| 💬 **评论互动**    | 活动/作品评论系统                                         |
-| 🏆 **赞助商管理**  | 活动赞助商展示与管理                                      |
-| 📊 **数据统计**    | 活动数据大屏、播放量/投稿统计                             |
-| 📱 **移动端适配**  | 完整的移动端页面体验                                      |
-| 🌍 **i18n 多语言** | 中文 / English / 日本語                                   |
-| 📧 **邮件服务**    | 活动通知、验证邮件                                        |
-| 🤖 **AI 翻译**     | 基于 OpenAI 兼容接口的内容自动翻译                        |
-
----
-
-## 🏗️ 系统架构
-
-```
-                         ┌─────────────────────────────────┐
-                         │          Nginx (服务器)           │
-                         │       反向代理 & SSL 终止         │
-                         └────┬──────────┬──────────┬───────┘
-                              │          │          │
-                         :3000│     :8055│     :8080│
-                              ▼          ▼          ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                        Docker Compose                               │
-│                                                                     │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │
-│  │   Frontend   │  │   Backend    │  │    Admin     │              │
-│  │   Nuxt 3     │  │  Koa2 + TS   │  │  Vue 3 SPA  │              │
-│  │   SSR/SSG    │  │   REST API   │  │  Ant Design  │              │
-│  │   :3000      │  │   :8055      │  │  Nginx :80   │              │
-│  └──────┬───────┘  └──────┬───────┘  └──────────────┘              │
-│         │                 │                                         │
-│         │     ┌───────────┼───────────┐                            │
-│         │     ▼           ▼           ▼                            │
-│         │  ┌──────┐  ┌────────┐  ┌────────────┐                   │
-│         │  │Redis │  │MongoDB │  │  七牛云 CDN  │                   │
-│         │  │  7   │  │   6    │  │  对象存储    │                   │
-│         │  └──────┘  └────────┘  └────────────┘                   │
-│         │                                                          │
-│         └── SSR 请求通过 Docker 内部网络 → backend:8055             │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
+  user_cn --> main_domain --> qiniu_main --> origin
+  user_cn --> asset_domain --> qiniu_asset --> kodo
+  main_domain -. "接口请求直连" .-> api
 ```
 
----
+国内用户访问 `mirai-mad.com` 时，页面访问链路经过七牛云 CDN 到源站。视频、图片和静态资源访问 `assets.mirai-mad.com`，由七牛云 CDN 加速，最终回源到 KODO 对象存储。所有 API 请求不走静态资源 CDN，直接访问 API 源站。
 
-## 🛠️ 技术栈
+### 海外链路
 
-### Frontend — `apps/frontend`
+```mermaid
+flowchart LR
+  user_global["海外用户"]
+  main_domain["mirai-mad.com"]
+  origin_judge["源站<br/>IP 地域判断"]
+  global_domain["global.mirai-mad.com"]
+  cf_main["Cloudflare<br/>主站缓存"]
+  qiniu_global_main["七牛云 CDN<br/>海外主站回源层"]
+  jakarta_frontend["雅加达前端源站"]
 
-| 技术                                      | 说明                     |
-| ----------------------------------------- | ------------------------ |
-| [Nuxt 3](https://nuxt.com/)               | Vue 3 全栈框架 (SSR/SSG) |
-| [Vue 3](https://vuejs.org/)               | 渐进式前端框架           |
-| [Element Plus](https://element-plus.org/) | UI 组件库                |
-| [Varlet UI](https://varlet.gitee.io/)     | 移动端组件库             |
-| [UnoCSS](https://unocss.dev/)             | 原子化 CSS 引擎          |
-| [Pinia](https://pinia.vuejs.org/)         | 状态管理                 |
-| [Vue I18n](https://vue-i18n.intlify.dev/) | 国际化 (cn/en/jp)        |
+  asset_global["assets-global.mirai-mad.com"]
+  cf_asset["Cloudflare<br/>资源缓存"]
+  qiniu_asset_global["七牛云 CDN<br/>海外资源回源层"]
+  asset_origin["资源源站<br/>对象存储"]
 
-### Backend — `apps/backend`
+  api["API 源站<br/>所有接口直连"]
 
-| 技术                                                 | 说明                    |
-| ---------------------------------------------------- | ----------------------- |
-| [Koa 2](https://koajs.com/)                          | 轻量级 Node.js Web 框架 |
-| [TypeScript](https://www.typescriptlang.org/)        | 类型安全                |
-| [Mongoose](https://mongoosejs.com/)                  | MongoDB ODM             |
-| [ioredis](https://github.com/redis/ioredis)          | Redis 客户端            |
-| [PM2](https://pm2.keymetrics.io/)                    | 进程管理（生产环境）    |
-| [JWT](https://jwt.io/)                               | 身份认证                |
-| [Log4js](https://log4js-node.github.io/log4js-node/) | 日志系统                |
+  user_global --> main_domain --> origin_judge
+  origin_judge -- "海外访问切换" --> global_domain
+  global_domain --> cf_main
+  cf_main -- "缓存命中" --> user_global
+  cf_main -- "未命中" --> qiniu_global_main --> jakarta_frontend
 
-### Admin — `apps/MMGCBACK`
+  user_global --> asset_global --> cf_asset
+  cf_asset -- "缓存命中" --> user_global
+  cf_asset -- "未命中" --> qiniu_asset_global --> asset_origin
 
-| 技术                                                       | 说明             |
-| ---------------------------------------------------------- | ---------------- |
-| [Vue 3](https://vuejs.org/) + [Vite](https://vitejs.dev/)  | 前端构建         |
-| [Ant Design Vue](https://antdv.com/)                       | 企业级 UI 组件库 |
-| [Vue Vben Admin](https://github.com/vbenjs/vue-vben-admin) | 后台管理模板     |
-| [ECharts](https://echarts.apache.org/)                     | 数据可视化       |
-| [wangEditor](https://www.wangeditor.com/)                  | 富文本编辑器     |
-
-### 基础设施
-
-| 技术                                                  | 说明              |
-| ----------------------------------------------------- | ----------------- |
-| [Docker Compose](https://docs.docker.com/compose/)    | 容器编排          |
-| [Turborepo](https://turbo.build/)                     | Monorepo 构建系统 |
-| [pnpm](https://pnpm.io/)                              | 高效包管理器      |
-| [GitHub Actions](https://github.com/features/actions) | CI/CD 流水线      |
-| [GHCR](https://ghcr.io) + 阿里云 ACR                  | 容器镜像仓库      |
-
----
-
-## 📂 项目结构
-
+  global_domain -. "接口请求直连" .-> api
 ```
+
+海外用户首次访问 `mirai-mad.com` 后，由源站根据 IP 地域判断切换到 `global.mirai-mad.com`。海外主站接入 Cloudflare，Cloudflare 无缓存时访问七牛云，再回源到雅加达前端。海外视频和静态资源统一放在 `assets-global.mirai-mad.com`，该域名先经过 Cloudflare，缓存未命中再访问七牛云 CDN，最终回源到资源源站。所有 API 仍然直接访问源站。
+
+### 总体部署拓扑
+
+```mermaid
+flowchart TB
+  subgraph users["访问用户"]
+    cn["国内用户"]
+    global["海外用户"]
+    admin_user["运营/Admin 用户"]
+  end
+
+  subgraph domains["公网域名"]
+    main["mirai-mad.com"]
+    global_main["global.mirai-mad.com"]
+    assets_cn["assets.mirai-mad.com"]
+    assets_global["assets-global.mirai-mad.com"]
+    admin_domain["Admin 入口"]
+  end
+
+  subgraph cdn["CDN 与边缘缓存"]
+    qiniu_cn["七牛云 CDN<br/>国内主站/资源"]
+    cf["Cloudflare<br/>海外主站/资源"]
+    qiniu_global["七牛云 CDN<br/>海外回源层"]
+  end
+
+  subgraph origin["源站服务"]
+    frontend["Frontend<br/>Nuxt 3 SSR"]
+    jakarta["雅加达前端源站"]
+    backend["Backend API<br/>Koa2 + TypeScript"]
+    admin["Admin<br/>Vue 3 SPA"]
+  end
+
+  subgraph storage["数据与资源"]
+    mongo["MongoDB"]
+    redis["Redis"]
+    kodo["KODO/对象存储"]
+  end
+
+  cn --> main --> qiniu_cn --> frontend
+  cn --> assets_cn --> qiniu_cn --> kodo
+
+  global --> main --> frontend
+  frontend -- "海外 IP 切换" --> global_main
+  global_main --> cf --> qiniu_global --> jakarta
+  global --> assets_global --> cf --> qiniu_global --> kodo
+
+  admin_user --> admin_domain --> admin
+  frontend -. "API 直连" .-> backend
+  jakarta -. "API 直连" .-> backend
+  admin -. "API 直连" .-> backend
+  backend --> mongo
+  backend --> redis
+  backend --> kodo
+```
+
+## 工程架构
+
+```mermaid
+flowchart LR
+  subgraph repo["MMGC-Project Monorepo"]
+    frontend["apps/frontend<br/>前台活动网站<br/>Nuxt 3 + Vue 3"]
+    backend["apps/backend<br/>服务端 API<br/>Koa2 + TypeScript"]
+    admin["apps/MMGCBACK<br/>旧 Admin 后台<br/>Vue 3 + Vben + Ant Design Vue"]
+    admin_next["apps/admin-next<br/>新 Admin 模板<br/>React + Vite + Ant Design 5"]
+  end
+
+  subgraph capabilities["核心业务能力"]
+    activity["活动管理"]
+    submission["投稿与作品展示"]
+    video["视频播放与资源分发"]
+    member["成员与账号体系"]
+    sponsor["赞助商管理"]
+    dashboard["数据统计"]
+  end
+
+  frontend --> backend
+  admin --> backend
+  admin_next -. "迁移预留" .-> backend
+
+  backend --> activity
+  backend --> submission
+  backend --> video
+  backend --> member
+  backend --> sponsor
+  backend --> dashboard
+```
+
+### 前台站点：`apps/frontend`
+
+前台站点负责活动官网展示、作品展示、视频播放、投稿入口、多语言页面和 SEO。技术栈以 Nuxt 3、Vue 3、Pinia、Element Plus、Varlet UI、UnoCSS 为主。
+
+常用命令：
+
+```powershell
+corepack pnpm --filter mirai-offcial-website run dev
+corepack pnpm --filter mirai-offcial-website run dev:online
+corepack pnpm --filter mirai-offcial-website run build
+```
+
+### 服务端：`apps/backend`
+
+服务端提供统一 REST API，负责活动、作品、用户、投稿、评论、赞助商、统计、邮件、资源上传和第三方服务对接。技术栈以 Koa2、TypeScript、Mongoose、Redis、JWT、七牛云 SDK 为主。
+
+常用命令：
+
+```powershell
+corepack pnpm --filter mmgc_backend run dev
+corepack pnpm --filter mmgc_backend run check-types
+corepack pnpm --filter mmgc_backend run build
+```
+
+### Admin 后台：`apps/MMGCBACK`
+
+旧 Admin 是当前线上可用后台，负责运营侧的数据管理、活动管理、视频管理、投稿管理、表单配置、富文本编辑和数据看板。它基于 Vue 3、Vite、Vue Vben Admin、Ant Design Vue、ECharts 构建。
+
+常用命令：
+
+```powershell
+corepack pnpm --filter @mmgc/admin run dev
+corepack pnpm --filter @mmgc/admin run dev:adminonline
+corepack pnpm --filter @mmgc/admin run build
+```
+
+### 新 Admin 模板：`apps/admin-next`
+
+`apps/admin-next` 是新后台模板预留目录，目标是用更低复杂度的 React + Vite + Ant Design 5 + TanStack Query 逐步替换旧后台的业务页面。新旧后台需要并行运行，优先迁移登录、Dashboard、视频管理、活动管理和投稿表单。
+
+常用命令：
+
+```powershell
+corepack pnpm --filter @mmgc/admin-next run dev
+corepack pnpm --filter @mmgc/admin-next run build
+```
+
+## 项目结构
+
+```text
 MMGC-Project/
-├── .github/
-│   └── workflows/
-│       └── deploy.yml           # CI/CD 流水线
-├── apps/
-│   ├── frontend/                # 🌐 前端 (Nuxt 3 SSR)
-│   │   ├── pages/               #    页面路由
-│   │   ├── components/          #    公共组件
-│   │   ├── server/              #    服务端 API 代理
-│   │   ├── i18n/                #    国际化配置
-│   │   └── Dockerfile           #    前端容器构建
-│   ├── backend/                 # ⚙️ 后端 (Koa2 + TypeScript)
-│   │   ├── src/
-│   │   │   ├── controller/      #    控制器（活动/作品/成员...）
-│   │   │   ├── entity/          #    数据模型 (Mongoose)
-│   │   │   ├── service/         #    业务逻辑
-│   │   │   ├── middleware/      #    中间件（鉴权/日志/CORS）
-│   │   │   └── router/          #    路由定义
-│   │   └── Dockerfile           #    后端容器构建
-│   └── MMGCBACK/                # 🔧 Admin 管理后台 (Vue 3 SPA)
-│       ├── src/views/           #    管理页面
-│       │   ├── management/      #      活动/成员/作品/赞助商管理
-│       │   ├── dashboard/       #      数据看板
-│       │   └── form/            #      表单页
-│       └── Dockerfile           #    Admin 容器构建
-├── env/                         # 🔐 环境变量模板
-├── docker-compose.yml           # 🐳 基础编排
-├── docker-compose.production.yml#    生产环境覆盖
-├── turbo.json                   # ⚡ Turborepo 配置
-├── pnpm-workspace.yaml          # 📦 Monorepo 工作区
-└── package.json                 # 📋 根配置
+├─ apps/
+│  ├─ frontend/      # 前台活动网站，Nuxt 3 SSR
+│  ├─ backend/       # 服务端 API，Koa2 + TypeScript
+│  ├─ MMGCBACK/      # 当前线上 Admin 后台，Vue 3 SPA
+│  └─ admin-next/    # 新 Admin 模板与迁移预留
+├─ env/              # 环境变量模板与部署配置说明
+├─ .github/          # GitHub Actions 工作流
+├─ docker-compose.yml
+├─ docker-compose.production.yml
+├─ package.json
+├─ pnpm-workspace.yaml
+├─ pnpm-lock.yaml
+└─ turbo.json
 ```
 
----
+## 本地开发
 
-## 🚀 快速开始
+### 环境要求
 
-### 前置要求
+- Node.js：与仓库脚本和部署环境保持一致
+- pnpm：`pnpm@9.15.4`
+- MongoDB
+- Redis
 
-- **Node.js** ≥ 22
-- **pnpm** ≥ 9
-- **MongoDB** ≥ 6
-- **Redis** ≥ 7
+### 安装依赖
 
-### 本地开发
-
-```bash
-# 1. 克隆仓库
-git clone https://github.com/ADKcodeXD/MMGC-Project.git
-cd MMGC-Project
-
-# 2. 安装依赖
-pnpm install
-
-# 3. 配置环境变量
-cp apps/backend/.env.development.example apps/backend/.env.development
-# 编辑 .env.development 填写 MongoDB / Redis 等配置
-
-# 4. 启动所有服务
-pnpm dev
+```powershell
+corepack enable
+corepack pnpm install
 ```
 
-各服务地址：
+### 启动所有工作区开发服务
 
-- 🌐 Frontend: `http://localhost:3000`
-- ⚙️ Backend API: `http://localhost:8055/mmgcApi`
-- 🔧 Admin: `http://localhost:8080`
+```powershell
+corepack pnpm run dev
+```
 
----
+### 常用端口
 
-## 🐳 Docker 部署
+| 服务 | 默认端口 | 说明 |
+| --- | --- | --- |
+| Frontend | `3000` | Nuxt 前台站点 |
+| Backend | `8055` | REST API，默认路径 `/mmgcApi` |
+| Admin | `8080` | 旧 Admin 后台 |
+| MongoDB | `27017` | 数据库 |
+| Redis | `6379` | 缓存 |
 
-### 一键部署（推荐）
+## Docker 部署
 
-```bash
-# 1. 配置环境变量
-mkdir -p env
-cp env/backend.env.production.example env/backend.env.production
-cp env/frontend.env.production.example env/frontend.env.production
-# 编辑 env/ 下的文件，填写实际配置
-
-# 2. 启动所有服务（含 MongoDB + Redis）
+```powershell
 docker compose up -d
-
-# 3. 查看日志
 docker compose logs -f
 ```
 
-### 生产环境部署
+生产环境可叠加 production compose：
 
-```bash
-# 使用生产环境覆盖（挂载服务器特定数据目录 & 环境变量）
+```powershell
 docker compose -f docker-compose.yml -f docker-compose.production.yml up -d
 ```
 
-### 服务端口
+更完整的上线说明见：
 
-| 服务     | 端口    | 说明                  |
-| -------- | ------- | --------------------- |
-| Frontend | `3000`  | Nuxt SSR              |
-| Backend  | `8055`  | REST API (`/mmgcApi`) |
-| Admin    | `8080`  | SPA 管理后台          |
-| MongoDB  | `27017` | 数据库                |
-| Redis    | `6379`  | 缓存                  |
+- [AI Agent 部署指南](./docs/deployment-ai-agent.md)
+- [人类部署指南](./docs/deployment-human.md)
+- [Nginx 示例配置](./env/nginx.mmgc.conf.example)
 
-> 💡 生产环境建议通过 Nginx 反向代理统一对外，不直接暴露服务端口。
+## 验证命令
 
----
+按改动范围选择运行：
 
-## ⚙️ CI/CD 流水线
-
-推送到 `master` 分支自动触发 GitHub Actions，完成以下流程：
-
-```
-代码推送 (master)
-    │
-    ▼
-┌──────────────────────────────────────────────┐
-│  GitHub Actions                              │
-│                                              │
-│  1. 📦 构建 Docker 镜像                       │
-│     ├── mmgc-backend                         │
-│     ├── mmgc-frontend                        │
-│     └── mmgc-admin                           │
-│                                              │
-│  2. 🚀 推送到 GHCR (ghcr.io)                 │
-│                                              │
-│  3. 🌏 同步到阿里云 ACR (可选, 国内加速)       │
-│                                              │
-│  4. 🔄 SSH 部署到服务器                       │
-│     ├── git pull                             │
-│     ├── docker compose pull                  │
-│     └── docker compose up -d                 │
-└──────────────────────────────────────────────┘
+```powershell
+corepack pnpm install --frozen-lockfile
+corepack pnpm --filter mmgc_backend run build
+corepack pnpm --filter mirai-offcial-website run build
+corepack pnpm --filter @mmgc/admin run build
+corepack pnpm --filter @mmgc/admin-next run build
+corepack pnpm run build
 ```
 
-### 所需 Secrets 配置
+Docker 相关改动可按需验证：
 
-| Secret                     | 说明                    |
-| -------------------------- | ----------------------- |
-| `SSH_HOST`                 | 服务器 IP               |
-| `SSH_USERNAME`             | SSH 用户名              |
-| `SSH_PASSWORD` / `SSH_KEY` | SSH 密码或密钥          |
-| `SSH_PORT`                 | SSH 端口                |
-| `PROJECT_PATH`             | 服务器上项目路径        |
-| `ALIYUN_ACR_*`             | 阿里云 ACR 配置（可选） |
+```powershell
+docker build -f apps/backend/Dockerfile -t mmgc-backend-test .
+docker build -f apps/frontend/Dockerfile -t mmgc-frontend-test .
+docker build -f apps/MMGCBACK/Dockerfile -t mmgc-admin-test .
+```
 
----
+## 不触发 Workflow 的 Push
 
-## 🤝 贡献指南
+当前 GitHub Actions 只在 `master` 分支 push 时触发部署。仅同步文档、TODO 或不希望触发部署时，优先推到非 `master` 分支：
 
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m 'feat: add amazing feature'`)
-4. 推送到分支 (`git push origin feature/amazing-feature`)
-5. 创建 Pull Request
+```powershell
+git switch -c docs/update-deployment-guide
+git push origin docs/update-deployment-guide
+```
 
----
+如果必须直接推 `master`，在提交信息中加入 GitHub Actions 支持的跳过标记：
 
-## 📄 开源协议
+```powershell
+git commit -m "docs: update deployment guide [skip ci]"
+git push origin master
+```
 
-本项目基于 [MIT License](LICENSE) 开源。
+可用标记包括 `[skip ci]`、`[ci skip]`、`[no ci]`、`[skip actions]`、`[actions skip]`。不要使用 `git push -o ci.skip`，这是 GitLab 常见写法，不能作为 GitHub Actions 的跳过方式。
 
----
+如果仓库启用了 required checks，被跳过的检查可能保持 Pending，PR 可能因此无法合并；这种情况下推一个不带跳过标记的新提交即可重新触发检查。
 
-<div align="center">
+## 维护约定
 
-**Made with ❤️ by [ADK](https://github.com/ADKcodeXD) & Mirai Mad Team**
-
-</div>
+- 使用仓库声明的 `pnpm@9.15.4`。
+- 新依赖必须同步更新根 `pnpm-lock.yaml`。
+- 旧 Admin 位于 `apps/MMGCBACK`，短期仍作为线上后台，不要因新模板迁移破坏旧后台。
+- 新 Admin 位于 `apps/admin-next`，迁移时必须复用现有后端接口契约。
+- API 请求默认直连源站，静态资源和视频资源按国内、海外域名分别走 CDN 链路。
