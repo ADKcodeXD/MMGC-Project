@@ -1,16 +1,17 @@
-import { ArrowLeftOutlined, HolderOutlined, VideoCameraAddOutlined } from '@ant-design/icons'
+import { ArrowLeftOutlined, DownloadOutlined, HolderOutlined, VideoCameraAddOutlined } from '@ant-design/icons'
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { App, Button, Card, Col, Form, Input, InputNumber, Popconfirm, Row, Select } from 'antd'
-import { useEffect, useState } from 'react'
+import { App, Button, Card, Col, Form, Input, InputNumber, Modal, Popconfirm, Progress, Row, Select, Space } from 'antd'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { activityApi, movieApi } from '../api/modules'
 import I18nFormItem from '../components/I18nFormItem'
 import QiniuUpload from '../components/QiniuUpload'
 import type { DayVo, MovieVo } from '../types'
 import { text } from '../utils/i18n'
+import { exportVideos, previewExportFiles, type ExportProgress } from '../utils/exportVideos'
 import SearchMoviesModal from './components/SearchMoviesModal'
 
 function SortableMovieCard({ item, unbindMovieMutation }: { item: MovieVo; unbindMovieMutation: any }) {
@@ -69,6 +70,8 @@ export default function DayEdit() {
   const { message } = App.useApp()
   const queryClient = useQueryClient()
   const [searchModalOpen, setSearchModalOpen] = useState(false)
+  const [exportProgress, setExportProgress] = useState<ExportProgress | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   const daysQuery = useQuery({
     queryKey: ['activity-days', activityId],
@@ -169,6 +172,44 @@ export default function DayEdit() {
     sortMutation.mutate(nextItems)
   }
 
+  const hasExportableVideos = sortedMovies.some(m => {
+    const pl = m.moviePlaylink
+    return pl && (pl.cn || pl.en || pl.jp)
+  })
+
+  const handleExport = useCallback(async () => {
+    if (!dayIndex || sortedMovies.length === 0) return
+
+    const items = previewExportFiles(activityId, dayIndex, sortedMovies)
+    if (items.length === 0) {
+      message.warning('当前天数下没有可导出的视频播放链接')
+      return
+    }
+
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    setExportProgress({ current: 0, total: items.length, fileName: '准备中...', percent: 0, phase: 'downloading' })
+
+    try {
+      await exportVideos(activityId, dayIndex, sortedMovies, setExportProgress, controller.signal)
+      message.success('视频导出完成，ZIP 文件已开始下载')
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        message.info('已取消导出')
+      } else {
+        message.error(`导出失败: ${err.message}`)
+      }
+    } finally {
+      abortRef.current = null
+      setTimeout(() => setExportProgress(null), 1500)
+    }
+  }, [activityId, dayIndex, sortedMovies, message])
+
+  const handleCancelExport = useCallback(() => {
+    abortRef.current?.abort()
+  }, [])
+
   return (
     <div className="page" style={{ paddingBottom: 76 }}>
       <div className="page-heading">
@@ -235,9 +276,19 @@ export default function DayEdit() {
           <Card
             title="绑定的参赛视频"
             extra={
-              <Button type="primary" icon={<VideoCameraAddOutlined />} onClick={() => setSearchModalOpen(true)}>
-                从片库添加视频至本天数
-              </Button>
+              <Space>
+                <Button
+                  icon={<DownloadOutlined />}
+                  onClick={handleExport}
+                  disabled={!hasExportableVideos || moviesQuery.isLoading}
+                  loading={exportProgress !== null && exportProgress.phase !== 'done'}
+                >
+                  导出本日视频
+                </Button>
+                <Button type="primary" icon={<VideoCameraAddOutlined />} onClick={() => setSearchModalOpen(true)}>
+                  从片库添加视频至本天数
+                </Button>
+              </Space>
             }
           >
             {moviesQuery.isLoading ? (
@@ -275,6 +326,45 @@ export default function DayEdit() {
           onBound={() => queryClient.invalidateQueries({ queryKey: ['day-movies', activityId, dayIndex] })}
         />
       )}
+
+      <Modal
+        title="导出视频"
+        open={exportProgress !== null}
+        footer={
+          exportProgress?.phase === 'done' ? (
+            <Button type="primary" onClick={() => setExportProgress(null)}>完成</Button>
+          ) : (
+            <Button danger onClick={handleCancelExport}>取消导出</Button>
+          )
+        }
+        closable={false}
+        maskClosable={false}
+        width={480}
+      >
+        {exportProgress && (
+          <div style={{ padding: '12px 0' }}>
+            <Progress
+              percent={exportProgress.percent}
+              status={exportProgress.phase === 'error' ? 'exception' : exportProgress.phase === 'done' ? 'success' : 'active'}
+              strokeColor={{ from: '#1677ff', to: '#52c41a' }}
+            />
+            <div style={{ marginTop: 12, fontSize: 13, color: '#666' }}>
+              {exportProgress.phase === 'downloading' && (
+                <span>正在下载 ({exportProgress.current}/{exportProgress.total}): {exportProgress.fileName}</span>
+              )}
+              {exportProgress.phase === 'zipping' && (
+                <span>正在生成压缩包...</span>
+              )}
+              {exportProgress.phase === 'done' && (
+                <span style={{ color: '#52c41a' }}>✓ 导出完成，共 {exportProgress.total} 个文件</span>
+              )}
+              {exportProgress.phase === 'error' && (
+                <span style={{ color: '#ff4d4f' }}>导出失败: {exportProgress.error}</span>
+              )}
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }
