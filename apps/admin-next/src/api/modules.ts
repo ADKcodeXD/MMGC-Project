@@ -59,10 +59,6 @@ export const movieApi = {
   sort: (params: Array<{ movieId: number; sortIndex: number }>) => put<null>('/movie/sortMovie', params)
 }
 
-export const uploadApi = {
-  qiniuToken: () => post<string>('/upload/getQiniuToken')
-}
-
 export const sponsorApi = {
   list: (params: PageParams) => get<PageResult<SponsorVo>>('/sponsor/getSponsorList', params),
   detail: (sponsorId: number) => get<SponsorVo>(`/sponsor/getSponsorDetail`, { sponsorId }),

@@ -30,6 +30,8 @@ export const removeItem = (key: string): void => {
 }
 
 const DEFAULT_ASSET_BASE_URL = 'https://assets.mirai-mad.com'
+const CN_ASSET_BASE_URL = 'https://assets-cn.mirai-mad.com'
+const LEGACY_GLOBAL_ASSET_BASE_URL = 'https://assets-global.mirai-mad.com'
 
 const stripTrailingSlash = (value = '') => value.replace(/\/+$/, '')
 
@@ -46,15 +48,21 @@ export const resolveAssetUrl = (url?: string | null) => {
   if (!url) return ''
   try {
     const globalStore = useGlobalStore()
-    const assetBaseUrl = stripTrailingSlash(globalStore.config?.assetBaseUrl || DEFAULT_ASSET_BASE_URL)
+    const assetBaseUrl = stripTrailingSlash(
+      globalStore.config?.assetBaseUrl || DEFAULT_ASSET_BASE_URL
+    )
     const primaryBaseUrl = stripTrailingSlash(
       globalStore.config?.assetPrimaryBaseUrl || DEFAULT_ASSET_BASE_URL
     )
+    const cnBaseUrl = stripTrailingSlash(globalStore.config?.assetCnBaseUrl || CN_ASSET_BASE_URL)
     const currentUrl = new URL(url)
     const assetBase = new URL(assetBaseUrl)
     const primaryHosts = new Set([
       getUrlHost(primaryBaseUrl),
-      getUrlHost(DEFAULT_ASSET_BASE_URL)
+      getUrlHost(DEFAULT_ASSET_BASE_URL),
+      getUrlHost(cnBaseUrl),
+      getUrlHost(CN_ASSET_BASE_URL),
+      getUrlHost(LEGACY_GLOBAL_ASSET_BASE_URL)
     ])
 
     if (!primaryHosts.has(currentUrl.host)) return url
@@ -69,6 +77,12 @@ export const resolveAssetUrl = (url?: string | null) => {
 
 export const calcZip = (img: string, key: string) => {
   img = resolveAssetUrl(img)
+  if (
+    getUrlHost(img) === getUrlHost(DEFAULT_ASSET_BASE_URL) ||
+    getUrlHost(img) === getUrlHost(CN_ASSET_BASE_URL)
+  ) {
+    return img
+  }
   let quality
   const RegQiniu = new RegExp(/^http(s|):\/\/assets.*\/[0-9a-zA-Z-]*.(jpeg|jpg|png|webp|gif)$/, 'i')
   const RegTencent = new RegExp(

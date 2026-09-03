@@ -10,6 +10,7 @@ const body = KoaBody({
 		uploadDir: path.join(process.cwd(), '/public'), // 设置文件上传目录
 		keepExtensions: true, // 保持文件的后缀
 		maxFieldsSize: 200 * 1024 * 1024,
+		maxFileSize: 200 * 1024 * 1024,
 		filename(name, ext) {
 			if (ext === '.mp4') {
 				return `${name}${ext}`

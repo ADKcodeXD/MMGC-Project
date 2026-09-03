@@ -2,16 +2,16 @@ import { LoadingOutlined, PlusOutlined, VideoCameraOutlined } from '@ant-design/
 import { App, Upload, Space, Button } from 'antd'
 import ImgCrop from 'antd-img-crop'
 import { useState } from 'react'
-import { uploadToQiniu } from '../api/upload'
+import { uploadToR2 } from '../api/upload'
 
-type QiniuUploadProps = {
+type R2UploadProps = {
   kind: 'image' | 'video'
   accept?: string
   value?: string
   onChange?: (url: string) => void
 }
 
-export default function QiniuUpload({ kind, accept, value, onChange }: QiniuUploadProps) {
+export default function R2Upload({ kind, accept, value, onChange }: R2UploadProps) {
   const [uploading, setUploading] = useState(false)
   const { message } = App.useApp()
 
@@ -19,7 +19,7 @@ export default function QiniuUpload({ kind, accept, value, onChange }: QiniuUplo
     const { file, onSuccess, onError, onProgress } = options
     setUploading(true)
     try {
-      const url = await uploadToQiniu(file as File, kind, (percent) => {
+      const url = await uploadToR2(file as File, kind, (percent) => {
         onProgress?.({ percent })
       })
       onChange?.(url)
@@ -35,14 +35,14 @@ export default function QiniuUpload({ kind, accept, value, onChange }: QiniuUplo
 
   const uploadButton = (
     <div>
-      {uploading ? <LoadingOutlined /> : (kind === 'video' ? <VideoCameraOutlined /> : <PlusOutlined />)}
+      {uploading ? <LoadingOutlined /> : kind === 'video' ? <VideoCameraOutlined /> : <PlusOutlined />}
       <div style={{ marginTop: 8 }}>{kind === 'video' ? '上传视频' : '上传图片'}</div>
     </div>
   )
 
   if (kind === 'image') {
     return (
-      <ImgCrop rotationSlider aspect={16/9}>
+      <ImgCrop rotationSlider aspect={16 / 9}>
         <Upload
           accept={accept || 'image/png,image/jpeg,image/webp,image/gif'}
           listType="picture-card"
@@ -61,10 +61,36 @@ export default function QiniuUpload({ kind, accept, value, onChange }: QiniuUplo
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        width: '100%'
+      }}
+    >
       {value ? (
-        <div style={{ position: 'relative', width: '100%', paddingTop: '56.25%', background: '#000', borderRadius: 8, overflow: 'hidden' }}>
-          <video src={value} controls style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
+        <div
+          style={{
+            position: 'relative',
+            width: '100%',
+            paddingTop: '56.25%',
+            background: '#000',
+            borderRadius: 8,
+            overflow: 'hidden'
+          }}
+        >
+          <video
+            src={value}
+            controls
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%'
+            }}
+          />
         </div>
       ) : (
         <Upload
@@ -77,17 +103,17 @@ export default function QiniuUpload({ kind, accept, value, onChange }: QiniuUplo
           {uploadButton}
         </Upload>
       )}
-      
+
       {value && (
         <Space>
-          <Upload
-            accept={accept || 'video/mp4,video/webm'}
-            showUploadList={false}
-            customRequest={customRequest}
-          >
-            <Button size="small" type="primary" loading={uploading}>重新上传</Button>
+          <Upload accept={accept || 'video/mp4,video/webm'} showUploadList={false} customRequest={customRequest}>
+            <Button size="small" type="primary" loading={uploading}>
+              重新上传
+            </Button>
           </Upload>
-          <Button size="small" danger onClick={() => onChange?.('')}>移除视频</Button>
+          <Button size="small" danger onClick={() => onChange?.('')}>
+            移除视频
+          </Button>
         </Space>
       )}
     </div>

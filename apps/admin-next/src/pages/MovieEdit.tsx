@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { activityApi, bilibiliApi, movieApi } from '../api/modules'
 import I18nFormItem from '../components/I18nFormItem'
-import QiniuUpload from '../components/QiniuUpload'
+import R2Upload from '../components/R2Upload'
 import type { BiliUserInfo, MovieVo } from '../types'
 import { text } from '../utils/i18n'
 
@@ -312,7 +312,7 @@ export default function MovieEdit() {
                 <Input placeholder="输入封面图片链接" style={{ marginBottom: 8 }} />
               </Form.Item>
               <Form.Item name="movieCover" noStyle>
-                <QiniuUpload kind="image" accept="image/png,image/jpeg,image/webp,image/gif" />
+                <R2Upload kind="image" accept="image/png,image/jpeg,image/webp,image/gif" />
               </Form.Item>
 
               <div style={{ marginTop: 24 }}>
@@ -336,7 +336,7 @@ export default function MovieEdit() {
                   />
                 </Form.Item>
                 <Form.Item key={`play-source-upload-${activePlaySource}`} name={['moviePlaylink', activePlaySource]} noStyle>
-                  <QiniuUpload kind="video" accept="video/mp4,application/vnd.apple.mpegurl,application/x-mpegURL" />
+                  <R2Upload kind="video" accept="video/mp4,application/vnd.apple.mpegurl,application/x-mpegURL" />
                 </Form.Item>
                 <div style={{ marginTop: 8, color: '#6b7280', fontSize: 12 }}>
                   当前预览随 CN / EN / JP 源切换；这里是不同播放源，不使用 AI 翻译。

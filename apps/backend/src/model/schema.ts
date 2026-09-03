@@ -123,6 +123,8 @@ export const configSchema = new mongoose.Schema<MMGCSysConfig>(
     currentActivityId: Number,
     skin: String,
     isVideoPlay: Boolean,
+		enableWatermark: Boolean,
+		enableCnAssetAcceleration: { type: Boolean, default: false },
     otherSettings: String,
     configType: String
   },

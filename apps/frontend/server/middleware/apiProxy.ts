@@ -16,30 +16,23 @@ export default defineEventHandler(async event => {
       headers['Authorization'] = `Bearer ${token}`
     }
     let body = null
-    if (method !== 'GET') {
-      body = await readBody(event)
-    }
-    if (event.node.req.url.includes('upload')) {
-      const formData = await readMultipartFormData(event)
-      body = formData && (formData[0] as any)
-
-      const boundary = `----${Math.random().toString(16)}`
-      const payload = Buffer.concat([
-        Buffer.from(`--${boundary}\r\n`),
-        Buffer.from(
-          `Content-Disposition: form-data; name="${body.name}"; filename="${body.filename}"\r\n`
-        ),
-        Buffer.from(`Content-Type: ${body.type}\r\n\r\n`),
-        body.data,
-        Buffer.from(`\r\n--${boundary}--\r\n`)
-      ])
+    if (method !== 'GET' && event.node.req.url.includes('upload')) {
+      const parts = await readMultipartFormData(event)
+      const file = parts?.find(part => part.filename)
+      if (!file?.data || !file.filename) {
+        throw createError({ statusCode: 400, statusMessage: 'Missing upload file' })
+      }
+      const uploadForm = new FormData()
+      uploadForm.append(
+        file.name || 'file',
+        new Blob([file.data], { type: file.type || 'application/octet-stream' }),
+        file.filename
+      )
       delete headers['content-type']
       delete headers['content-length']
-      headers['Content-Type'] = `multipart/form-data; boundary=${boundary}`
-      headers['Content-Length'] = payload.length
-      const formData2 = new FormData()
-      formData2.append(body.name, new Blob([payload]), body.filename)
-      body = formData2 as any
+      body = uploadForm
+    } else if (method !== 'GET') {
+      body = await readBody(event)
     }
     return $fetch(url, {
       method,

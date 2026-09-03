@@ -3,34 +3,36 @@ import { Autowired, Controller, Ctx, GetMapping, PostMapping, Query } from '~/co
 import { CosUtil } from '~/common/utils/cosutil'
 import fs from 'fs'
 import Result from '~/common/result'
-import { QiniuUtils } from '~/common/utils/qiniuUtils'
-import { Auth } from '~/common/decorator/auth'
+import { R2Utils } from '~/common/utils/r2Utils'
 @Controller('/upload')
 export default class UploadController {
 	cosUtil = new CosUtil()
 
 	@Autowired()
-	qiniuUtils!: QiniuUtils
+	r2Utils!: R2Utils
 
 	waitTingQueue = new Set()
 
 	@PostMapping('/uploadImg')
 	async uploadImg(@Ctx() ctx: Context) {
 		const file = ctx.request.files?.file as any
+		if (!file?.filepath || !file?.originalFilename) return Result.paramsError()
 		const path = file.filepath as string
-		const res = await this.qiniuUtils.uploadImg(path, file.originalFilename)
-		// 上传成功 将目录下的图片缓存删除
-		const stat = fs.statSync(path)
-		if (stat.isFile()) {
-			fs.unlinkSync(path)
+		try {
+			const res = await this.r2Utils.uploadImg(path, file.originalFilename)
+			if (res) return Result.success(res)
+			return Result.paramsError()
+		} finally {
+			if (fs.existsSync(path) && fs.statSync(path).isFile()) {
+				fs.unlinkSync(path)
+			}
 		}
-		if (res) return Result.success(res)
-		else return Result.paramsError()
 	}
 
 	@PostMapping('/uploadVideo')
 	async uploadVideo(@Ctx() ctx: Context) {
 		const file = ctx.request.files?.file as any
+		if (!file?.filepath || !file?.originalFilename) return Result.paramsError()
 		if (file.size > 200 * 1024 * 1024) {
 			return Result.paramsError()
 		}
@@ -41,7 +43,7 @@ export default class UploadController {
 		}
 		if (fs.statSync(path).isFile()) {
 			try {
-				const res = await this.qiniuUtils.uploadVideo(path, file.originalFilename)
+				const res = await this.r2Utils.uploadVideo(path, file.originalFilename)
 				if (res) {
 					return Result.success(res)
 				}
@@ -54,12 +56,6 @@ export default class UploadController {
 		} else {
 			return Result.paramsError()
 		}
-	}
-
-	@PostMapping('/getQiniuToken')
-	@Auth([ROLE.ADMIN, ROLE.SUBADMIN, ROLE.COMMITTER, ROLE.GROUPMEMBER], '/getQiniuToken')
-	async getQiniuToken() {
-		return Result.success(this.qiniuUtils.getUptoken())
 	}
 
 	@GetMapping('/getLoaded')

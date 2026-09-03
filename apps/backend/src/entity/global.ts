@@ -15,6 +15,7 @@ export class MMGCSysConfigEntity implements MMGCSysConfig {
 	skin = ''
 	isVideoPlay = true
 	enableWatermark = true
+	enableCnAssetAcceleration = false
 	otherSettings = ''
 	configType = 1
 }

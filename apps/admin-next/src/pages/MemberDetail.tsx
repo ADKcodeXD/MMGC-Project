@@ -4,7 +4,7 @@ import { App, Avatar, Button, Card, Col, Form, Input, Popconfirm, Radio, Row, Se
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { memberApi } from '../api/modules'
-import QiniuUpload from '../components/QiniuUpload'
+import R2Upload from '../components/R2Upload'
 import type { MemberVo } from '../types'
 
 const roleOptions = [
@@ -119,7 +119,7 @@ export default function MemberDetail() {
                 <Input />
               </Form.Item>
               <Form.Item name="avatar" noStyle>
-                <QiniuUpload kind="image" accept="image/png,image/jpeg,image/webp,image/gif" />
+                <R2Upload kind="image" accept="image/png,image/jpeg,image/webp,image/gif" />
               </Form.Item>
               <Form.Item name="role" label="角色" rules={[{ required: true }]} style={{ marginTop: 16 }}>
                 <Select options={roleOptions} />

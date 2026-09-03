@@ -29,37 +29,33 @@
 | --- | --- | --- |
 | `mirai-mad.com` | 必需 | 主站入口 |
 | `assets.mirai-mad.com` | 必需 | 视频、图片、上传资源 |
-| `global.mirai-mad.com` | 可选 | 海外主站 |
-| `assets-global.mirai-mad.com` | 可选 | 海外资源 |
+| `assets-cn.mirai-mad.com` | 可选 | 中国大陆资源加速，仅在系统开关开启时使用 |
 
 建议主站和资源分离。资源域名绑定 CDN，主站域名可以直接到源站 Nginx，也可以先接 CDN 再回源。
 
 ### 3. CDN 与对象存储
 
-当前项目默认按七牛云链路运行，但配置命名已经可以向通用 CDN adapter 过渡：
+当前项目通过后端使用 S3 兼容协议上传到 Cloudflare R2：
 
 | 配置 | 说明 |
 | --- | --- |
-| `CDN_ADAPTER` | 当前填 `qiniu` |
-| `CDN_ACCESS_KEY` | CDN/对象存储 Access Key |
-| `CDN_SECRET_KEY` | CDN/对象存储 Secret Key |
-| `CDN_BUCKET` | 对象存储 bucket |
-| `CDN_LINK` | 国内资源访问域名，例如 `https://assets.mirai-mad.com` |
-| `CDN_GLOBAL_LINK` | 海外资源访问域名，例如 `https://assets-global.mirai-mad.com` |
-| `CDN_FRONTEND_DOMAIN` | 主站域名，例如 `https://mirai-mad.com` |
-
-如果继续使用旧配置，也可以填写：
+| `R2_ENDPOINT` | R2 S3 API endpoint，不含或包含 bucket 路径均可 |
+| `R2_ACCESS_KEY_ID` | R2 Access Key ID，只放服务器环境变量 |
+| `R2_SECRET_ACCESS_KEY` | R2 Secret Access Key，只放服务器环境变量 |
+| `R2_BUCKET` | R2 bucket，例如 `miraimad` |
+| `R2_PUBLIC_URL` | 默认资源域名，例如 `https://assets.mirai-mad.com` |
+| `R2_CN_PUBLIC_URL` | 可选的中国大陆加速域名，例如 `https://assets-cn.mirai-mad.com` |
 
 ```env
-QINIU_ACCESS_KEY=
-QINIU_SECRET_KEY=
-QINIU_BUCKET=
-QINIU_CDN_LINK=https://assets.mirai-mad.com
-QINIU_GLOBAL_CDN_LINK=https://assets-global.mirai-mad.com
-QINIU_FRONTEND_DOMAIN=https://mirai-mad.com
+R2_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET=miraimad
+R2_PUBLIC_URL=https://assets.mirai-mad.com
+R2_CN_PUBLIC_URL=https://assets-cn.mirai-mad.com
 ```
 
-当前后端仍使用 qiniu SDK。换成其他 CDN 时，需要开发新的 adapter，不只是改环境变量。
+浏览器只把文件上传到后端 API，不应配置或获取 R2 Secret。
 
 ### 4. 证书
 
@@ -67,7 +63,7 @@ QINIU_FRONTEND_DOMAIN=https://mirai-mad.com
 
 - `mirai-mad.com` 的 HTTPS 证书。
 - 如果 Admin 使用独立域名，也要准备 Admin 域名证书。
-- `assets.mirai-mad.com` 和 `assets-global.mirai-mad.com` 的证书通常在 CDN 控制台里配置。
+- `assets.mirai-mad.com` 和 `assets-cn.mirai-mad.com` 的证书通常在 Cloudflare 或加速服务控制台里配置。
 
 ### 5. 邮件、数据库、密钥
 
@@ -86,14 +82,10 @@ QINIU_FRONTEND_DOMAIN=https://mirai-mad.com
 
 ### 创建对象存储和 CDN
 
-1. 创建对象存储 bucket。
-2. 创建 CDN 加速域名 `assets.mirai-mad.com`。
-3. 将 CDN 源站设置为对象存储 bucket 或对象存储源站域名。
-4. 给 CDN 域名开启 HTTPS。
-5. 在 DNS 里把 `assets.mirai-mad.com` CNAME 到 CDN 提供的地址。
-6. 等待 DNS 生效。
-
-海外资源是可选项。需要海外资源时，再创建 `assets-global.mirai-mad.com`，链路可以是 Cloudflare -> 七牛云 CDN -> 对象存储。
+1. 创建 Cloudflare R2 bucket。
+2. 将 `assets.mirai-mad.com` 作为 R2 Custom Domain 并开启 HTTPS。
+3. 如需中国大陆加速，将 `assets-cn.mirai-mad.com` 配置到相应加速服务并回源 R2。
+4. 等待 DNS 生效，再在后台开启“中国大陆资源加速”。
 
 ### 配置主站域名
 
@@ -136,13 +128,12 @@ AES_PASSWORD=replace-with-secret
 AES_SALT=replace-with-secret
 AES_IV=replace-with-secret
 
-CDN_ADAPTER=qiniu
-CDN_ACCESS_KEY=your-access-key
-CDN_SECRET_KEY=your-secret-key
-CDN_BUCKET=your-bucket
-CDN_LINK=https://assets.mirai-mad.com
-CDN_GLOBAL_LINK=https://assets-global.mirai-mad.com
-CDN_FRONTEND_DOMAIN=https://mirai-mad.com
+R2_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+R2_ACCESS_KEY_ID=your-access-key-id
+R2_SECRET_ACCESS_KEY=your-secret-access-key
+R2_BUCKET=miraimad
+R2_PUBLIC_URL=https://assets.mirai-mad.com
+R2_CN_PUBLIC_URL=https://assets-cn.mirai-mad.com
 ```
 
 3. 修改 `env/frontend.env.production`：
@@ -176,7 +167,7 @@ systemctl reload nginx
 - 访问 `https://mirai-mad.com/admin/` 进入旧 Admin。
 - 在 Admin 中管理活动、作品、投稿表单、赞助商、成员和数据看板。
 - 上传视频或图片到对象存储，并通过 `assets.mirai-mad.com` 分发。
-- 后续按需启用 `global.mirai-mad.com` 与 `assets-global.mirai-mad.com`，优化海外访问。
+- 确认中国大陆加速域名可用后，可在系统配置中开启“中国大陆资源加速”。
 
 ## 不触发 Workflow 的 Push
 
@@ -228,36 +219,24 @@ nginx -t
 
 如果资源上传成功但无法访问，优先检查：
 
-- `CDN_LINK` 是否是完整 HTTPS 地址。
-- CDN 域名是否已经 CNAME 到 provider。
-- CDN 源站是否绑定到正确 bucket。
+- `R2_PUBLIC_URL` 是否是完整 HTTPS 地址。
+- R2 Custom Domain 是否处于 Active 状态。
+- Custom Domain 是否绑定到正确 bucket。
 - bucket 内对象 key 是否和返回 URL 一致。
 
-## 海外节点怎么启用
+## 中国大陆资源加速怎么启用
 
-海外节点是可选增强，不影响国内首发上线。
+CN 加速是可选增强，关闭时所有地区都使用 `assets.mirai-mad.com`。
 
 启用前需要准备：
 
-- 海外前端源站，例如雅加达服务器。
-- `global.mirai-mad.com`。
-- Cloudflare 账号和域名接入权限。
-- `assets-global.mirai-mad.com`。
+- `assets-cn.mirai-mad.com` 已接入可用的中国大陆加速服务。
+- 加速服务能回源 `assets.mirai-mad.com` 或 R2。
+- 主站请求经过 Cloudflare，后端能收到可信的 `CF-IPCountry` 请求头。
 
-推荐链路：
+启用后的资源域名选择：
 
 ```text
-海外用户
-  -> global.mirai-mad.com
-  -> Cloudflare
-  -> 七牛云或海外前端源站
-  -> 雅加达前端
-
-海外资源
-  -> assets-global.mirai-mad.com
-  -> Cloudflare
-  -> 七牛云 CDN
-  -> 对象存储源站
+CN IP + 开关开启 -> assets-cn.mirai-mad.com
+其他所有请求      -> assets.mirai-mad.com
 ```
-
-API 不建议复制多套。默认所有前台、海外前台和 Admin 都直接访问同一个 API 源站。

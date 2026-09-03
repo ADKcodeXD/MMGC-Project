@@ -2,33 +2,32 @@
   <Row :gutter="[16, 16]" class="dashboard-overview">
     <Col :xs="24" :sm="12" :xl="6">
       <Card class="overview-card" :loading="loading" :bordered="false">
-        <Statistic title="CDN 流量总计 (7天)" :value="overview.totalTrafficGB" :precision="2" suffix="GB" />
+        <Statistic title="R2 当前存储" :value="overview.currentStorageGB" :precision="4" suffix="GB" />
         <div class="overview-meta">
-          <span>国内 {{ formatNumber(overview.chinaTrafficGB) }} GB</span>
-          <span>海外 {{ formatNumber(overview.overseaTrafficGB) }} GB</span>
+          <span>7 天日均 {{ formatNumber(overview.avgStorageGB, 4) }} GB</span>
+          <span>{{ overview.objectCount.toLocaleString() }} 个对象</span>
         </div>
       </Card>
     </Col>
     <Col :xs="24" :sm="12" :xl="6">
       <Card class="overview-card" :loading="loading" :bordered="false">
-        <Statistic title="预估流量费用" :value="overview.estimatedTrafficCost" :precision="2" prefix="￥" />
+        <Statistic title="Class A 操作 (7天)" :value="overview.classAOperations" />
         <div class="overview-meta">
-          <span>国内 ￥{{ formatNumber(overview.estimatedChinaTrafficCost) }}</span>
-          <span>海外 ￥{{ formatNumber(overview.estimatedOverseaTrafficCost) }}</span>
+          <span>写入、列举等</span>
         </div>
-        <div class="overview-tip">按 ￥0.15/GB 估算</div>
+        <div class="overview-tip">每月 100 万次免费</div>
       </Card>
     </Col>
     <Col :xs="24" :sm="12" :xl="6">
       <Card class="overview-card" :loading="loading" :bordered="false">
-        <Statistic title="七牛云当前存储" :value="overview.currentStorageGB" :precision="2" suffix="GB" />
-        <div class="overview-tip">标准存储空间</div>
+        <Statistic title="Class B 操作 (7天)" :value="overview.classBOperations" />
+        <div class="overview-tip">读取、Head 等；每月 1000 万次免费</div>
       </Card>
     </Col>
     <Col :xs="24" :sm="12" :xl="6">
       <Card class="overview-card" :loading="loading" :bordered="false">
-        <Statistic title="预估存储月费" :value="overview.estimatedStorageCost" :precision="2" prefix="￥" />
-        <div class="overview-tip">按 ￥0.10/GB/月 估算</div>
+        <Statistic title="R2 预估费用 (7天)" :value="overview.estimatedTotalCostUSD" :precision="4" prefix="$" suffix="USD" />
+        <div class="overview-tip">Standard Storage；公网出口流量费 $0</div>
       </Card>
     </Col>
   </Row>
@@ -41,21 +40,28 @@
   import type { DashboardOverviewData } from '/@/api/statistics/statistics'
 
   const emptyOverview: DashboardOverviewData = {
-    totalTrafficGB: 0,
-    chinaTrafficGB: 0,
-    overseaTrafficGB: 0,
-    estimatedTrafficCost: 0,
-    estimatedChinaTrafficCost: 0,
-    estimatedOverseaTrafficCost: 0,
+    provider: 'cloudflare-r2',
+    configured: false,
+    configurationError: null,
+    bucket: '',
+    periodDays: 7,
     currentStorageGB: 0,
-    estimatedStorageCost: 0,
+    avgStorageGB: 0,
+    objectCount: 0,
+    classAOperations: 0,
+    classBOperations: 0,
+    otherOperations: 0,
+    totalOperations: 0,
+    estimatedStorageCostUSD: 0,
+    estimatedOperationsCostUSD: 0,
+    estimatedTotalCostUSD: 0,
   }
 
   const loading = ref(false)
   const overview = ref<DashboardOverviewData>({ ...emptyOverview })
 
-  function formatNumber(value: number) {
-    return value.toFixed(2)
+  function formatNumber(value: number, precision = 2) {
+    return value.toFixed(precision)
   }
 
   onMounted(async () => {

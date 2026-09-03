@@ -10,6 +10,7 @@ import qiniu from 'qiniu'
 import axios from 'axios'
 import config from '~/config/config.default'
 import dayjs from 'dayjs'
+import { getCloudflareR2Dashboard } from '~/common/utils/cloudflareR2Analytics'
 
 const QINIU_BILLING = {
   standardStorageMonthly: 0.115,
@@ -582,6 +583,10 @@ export default class StatisticsService extends BaseService {
   }
 
   async getDashboardOverview(days = 7) {
+    return getCloudflareR2Dashboard(days)
+  }
+
+  private async getLegacyQiniuDashboardOverview(days = 7) {
     const accessKey = config.QINIU_ACCESS_KEY || ''
     const secretKey = config.QINIU_SECRET_KEY || ''
     const defaultRes = {

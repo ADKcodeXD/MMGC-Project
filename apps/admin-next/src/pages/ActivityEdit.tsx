@@ -6,7 +6,7 @@ import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { activityApi } from '../api/modules'
 import I18nFormItem from '../components/I18nFormItem'
-import QiniuUpload from '../components/QiniuUpload'
+import R2Upload from '../components/R2Upload'
 import SponsorList from '../components/SponsorList'
 import StaffList from '../components/StaffList'
 import type { ActivityVo } from '../types'
@@ -130,28 +130,28 @@ export default function ActivityEdit() {
                 <Input />
               </Form.Item>
               <Form.Item name="activityCover" noStyle>
-                <QiniuUpload kind="image" accept="image/png,image/jpeg,image/webp,image/gif" />
+                <R2Upload kind="image" accept="image/png,image/jpeg,image/webp,image/gif" />
               </Form.Item>
 
               <Form.Item name="activityLogo" label="活动专属 Logo" style={{ marginTop: 24 }}>
                 <Input />
               </Form.Item>
               <Form.Item name="activityLogo" noStyle>
-                <QiniuUpload kind="image" accept="image/png,image/jpeg,image/webp,image/gif" />
+                <R2Upload kind="image" accept="image/png,image/jpeg,image/webp,image/gif" />
               </Form.Item>
 
               <Form.Item name="activityBackgroundImg" label="活动主页背景图" style={{ marginTop: 24 }}>
                 <Input />
               </Form.Item>
               <Form.Item name="activityBackgroundImg" noStyle>
-                <QiniuUpload kind="image" accept="image/png,image/jpeg,image/webp,image/gif" />
+                <R2Upload kind="image" accept="image/png,image/jpeg,image/webp,image/gif" />
               </Form.Item>
 
               <Form.Item name="welcomePageBackgroundVideo" label="欢迎页背景视频" style={{ marginTop: 24 }}>
                 <Input />
               </Form.Item>
               <Form.Item name="welcomePageBackgroundVideo" noStyle>
-                <QiniuUpload kind="video" accept="video/mp4,video/webm" />
+                <R2Upload kind="video" accept="video/mp4,video/webm" />
               </Form.Item>
             </Card>
 

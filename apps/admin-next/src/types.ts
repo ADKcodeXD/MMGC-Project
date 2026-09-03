@@ -108,27 +108,18 @@ export type MovieVo = {
   updateTime?: string | null
 }
 
-export type BillingDetails = {
-  standardStorageGB: number
-  avgStandardStorageGB: number
-  standardStorageCost: number
-  lowFreqStorageGB: number
-  avgLowFreqStorageGB: number
-  lowFreqStorageCost: number
-  lowFreqRetrievalGB: number
-  lowFreqRetrievalCost: number
-  standardCdnBackToOriginGB: number
-  standardCdnBackToOriginCost: number
-  lowFreqCdnBackToOriginGB: number
-  lowFreqCdnBackToOriginCost: number
-  chinaTrafficGB: number
-  chinaTrafficCost: number
-  asiaTrafficGB: number
-  asiaTrafficCost: number
-  euNaTrafficGB: number
-  euNaTrafficCost: number
-  trafficPackageCost: number
-  totalCost: number
+export type R2BillingDetails = {
+  storageGbMonths: number
+  billableStorageGbMonths: number
+  classAOperations: number
+  billableClassAOperations: number
+  classBOperations: number
+  billableClassBOperations: number
+  storageCostUSD: number
+  classAOperationsCostUSD: number
+  classBOperationsCostUSD: number
+  egressCostUSD: number
+  totalCostUSD: number
 }
 
 export type TrackDailyItem = {
@@ -200,21 +191,34 @@ export type SitemapOverviewData = {
 }
 
 export type DashboardOverviewData = {
-  totalTrafficGB: number
-  chinaTrafficGB?: number
-  overseaTrafficGB?: number
-  estimatedTrafficCost: number
-  estimatedChinaTrafficCost?: number
-  estimatedOverseaTrafficCost?: number
+  provider: 'cloudflare-r2'
+  configured: boolean
+  configurationError: string | null
+  bucket: string
+  periodDays: number
   currentStorageGB: number
-  estimatedStorageCost: number
-  peakBandwidthMbps?: number
-  chinaPeakBandwidthMbps?: number
-  overseaPeakBandwidthMbps?: number
-  dailyStats?: SiteTrafficItem[]
-  billing?: BillingDetails
+  avgStorageGB: number
+  objectCount: number
+  classAOperations: number
+  classBOperations: number
+  otherOperations: number
+  totalOperations: number
+  estimatedStorageCostUSD: number
+  estimatedOperationsCostUSD: number
+  estimatedTotalCostUSD: number
+  dailyStats: R2DailyStat[]
+  billing: R2BillingDetails
 }
 
+export type R2DailyStat = {
+  date: string
+  classAOperations: number
+  classBOperations: number
+  otherOperations: number
+  totalOperations: number
+  storageGB: number
+  objectCount: number
+}
 
 export type SiteTrafficItem = {
   date: string
@@ -280,6 +284,7 @@ export type SysConfig = {
   currentActivityId?: number
   otherSettings?: string
   enableWatermark?: boolean
+  enableCnAssetAcceleration?: boolean
   isVideoPlay?: boolean
   skin?: string
   configType?: number

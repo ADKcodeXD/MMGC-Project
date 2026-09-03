@@ -6,126 +6,23 @@ MMGC Project 是面向活动官网、投稿展示、视频资源分发和后台�
 
 ## 线上域名与部署链路
 
-### 访问入口
+资源上传统一由后端写入 Cloudflare R2，浏览器不会接触 R2 Access Key 或 Secret。资源访问默认使用 `assets.mirai-mad.com`，不再按海外 IP 返回 `assets-global` 域名。系统配置中的“中国大陆资源加速”开关开启后，仅当上游传入 `CF-IPCountry: CN` 时使用 `assets-cn.mirai-mad.com`。
 
-| 域名 | 用途 | 说明 |
+| 域名 | 用途 | 规则 |
 | --- | --- | --- |
-| `mirai-mad.com` | 主站入口 | 国内用户优先走七牛云 CDN；海外用户由源站按 IP 判断后切换到 `global.mirai-mad.com` |
-| `global.mirai-mad.com` | 海外主站 | 接入 Cloudflare，缓存未命中时回源到七牛云，再到雅加达前端源站 |
-| `assets.mirai-mad.com` | 国内视频与静态资源 | 接入七牛云 CDN，最终回源到 KODO 对象存储 |
-| `assets-global.mirai-mad.com` | 海外视频与静态资源 | 接入 Cloudflare，缓存未命中访问七牛云 CDN，再回源到对象存储源站 |
-| API 源站 | 所有接口 | 前台、海外前台和 Admin 的 API 请求都直接访问源站 |
-
-> `xx.xx.xx` 表示当前主站源站 IP 占位，实际部署时以服务器配置为准。
-
-### 国内链路
+| `mirai-mad.com` | 主站入口 | 前台站点与 API 入口 |
+| `assets.mirai-mad.com` | 默认资源域名 | 所有地区默认使用，绑定 R2 bucket `miraimad` |
+| `assets-cn.mirai-mad.com` | 中国大陆加速域名 | 仅在开关开启且识别到 CN IP 时使用 |
+| API 源站 | 上传与业务接口 | 接收前后台文件并服务端上传到 R2 |
 
 ```mermaid
 flowchart LR
-  user_cn["国内用户"]
-  main_domain["mirai-mad.com"]
-  qiniu_main["七牛云 CDN<br/>主站加速"]
-  origin["源站<br/>xx.xx.xx"]
-
-  asset_domain["assets.mirai-mad.com"]
-  qiniu_asset["七牛云 CDN<br/>资源加速"]
-  kodo["KODO 对象存储<br/>视频/图片/静态资源"]
-
-  api["API 源站<br/>/mmgcApi"]
-
-  user_cn --> main_domain --> qiniu_main --> origin
-  user_cn --> asset_domain --> qiniu_asset --> kodo
-  main_domain -. "接口请求直连" .-> api
-```
-
-国内用户访问 `mirai-mad.com` 时，页面访问链路经过七牛云 CDN 到源站。视频、图片和静态资源访问 `assets.mirai-mad.com`，由七牛云 CDN 加速，最终回源到 KODO 对象存储。所有 API 请求不走静态资源 CDN，直接访问 API 源站。
-
-### 海外链路
-
-```mermaid
-flowchart LR
-  user_global["海外用户"]
-  main_domain["mirai-mad.com"]
-  origin_judge["源站<br/>IP 地域判断"]
-  global_domain["global.mirai-mad.com"]
-  cf_main["Cloudflare<br/>主站缓存"]
-  qiniu_global_main["七牛云 CDN<br/>海外主站回源层"]
-  jakarta_frontend["雅加达前端源站"]
-
-  asset_global["assets-global.mirai-mad.com"]
-  cf_asset["Cloudflare<br/>资源缓存"]
-  qiniu_asset_global["七牛云 CDN<br/>海外资源回源层"]
-  asset_origin["资源源站<br/>对象存储"]
-
-  api["API 源站<br/>所有接口直连"]
-
-  user_global --> main_domain --> origin_judge
-  origin_judge -- "海外访问切换" --> global_domain
-  global_domain --> cf_main
-  cf_main -- "缓存命中" --> user_global
-  cf_main -- "未命中" --> qiniu_global_main --> jakarta_frontend
-
-  user_global --> asset_global --> cf_asset
-  cf_asset -- "缓存命中" --> user_global
-  cf_asset -- "未命中" --> qiniu_asset_global --> asset_origin
-
-  global_domain -. "接口请求直连" .-> api
-```
-
-海外用户首次访问 `mirai-mad.com` 后，由源站根据 IP 地域判断切换到 `global.mirai-mad.com`。海外主站接入 Cloudflare，Cloudflare 无缓存时访问七牛云，再回源到雅加达前端。海外视频和静态资源统一放在 `assets-global.mirai-mad.com`，该域名先经过 Cloudflare，缓存未命中再访问七牛云 CDN，最终回源到资源源站。所有 API 仍然直接访问源站。
-
-### 总体部署拓扑
-
-```mermaid
-flowchart TB
-  subgraph users["访问用户"]
-    cn["国内用户"]
-    global["海外用户"]
-    admin_user["运营/Admin 用户"]
-  end
-
-  subgraph domains["公网域名"]
-    main["mirai-mad.com"]
-    global_main["global.mirai-mad.com"]
-    assets_cn["assets.mirai-mad.com"]
-    assets_global["assets-global.mirai-mad.com"]
-    admin_domain["Admin 入口"]
-  end
-
-  subgraph cdn["CDN 与边缘缓存"]
-    qiniu_cn["七牛云 CDN<br/>国内主站/资源"]
-    cf["Cloudflare<br/>海外主站/资源"]
-    qiniu_global["七牛云 CDN<br/>海外回源层"]
-  end
-
-  subgraph origin["源站服务"]
-    frontend["Frontend<br/>Nuxt 3 SSR"]
-    jakarta["雅加达前端源站"]
-    backend["Backend API<br/>Koa2 + TypeScript"]
-    admin["Admin<br/>Vue 3 SPA"]
-  end
-
-  subgraph storage["数据与资源"]
-    mongo["MongoDB"]
-    redis["Redis"]
-    kodo["KODO/对象存储"]
-  end
-
-  cn --> main --> qiniu_cn --> frontend
-  cn --> assets_cn --> qiniu_cn --> kodo
-
-  global --> main --> frontend
-  frontend -- "海外 IP 切换" --> global_main
-  global_main --> cf --> qiniu_global --> jakarta
-  global --> assets_global --> cf --> qiniu_global --> kodo
-
-  admin_user --> admin_domain --> admin
-  frontend -. "API 直连" .-> backend
-  jakarta -. "API 直连" .-> backend
-  admin -. "API 直连" .-> backend
-  backend --> mongo
-  backend --> redis
-  backend --> kodo
+  frontend["Frontend / Admin"] -->|"multipart upload"| backend["Backend API"]
+  backend -->|"S3 PutObject"| r2["Cloudflare R2<br/>miraimad"]
+  users["资源访问"] --> default["assets.mirai-mad.com"] --> r2
+  cn["CN IP + 开关开启"] --> cn_domain["assets-cn.mirai-mad.com"] --> r2
+  backend --> mongo["MongoDB"]
+  backend --> redis["Redis"]
 ```
 
 ## 工程架构
@@ -174,7 +71,7 @@ corepack pnpm --filter mirai-offcial-website run build
 
 ### 服务端：`apps/backend`
 
-服务端提供统一 REST API，负责活动、作品、用户、投稿、评论、赞助商、统计、邮件、资源上传和第三方服务对接。技术栈以 Koa2、TypeScript、Mongoose、Redis、JWT、七牛云 SDK 为主。
+服务端提供统一 REST API，负责活动、作品、用户、投稿、评论、赞助商、统计、邮件、资源上传和第三方服务对接。技术栈以 Koa2、TypeScript、Mongoose、Redis、JWT 和 Cloudflare R2 的 S3 兼容 SDK 为主。
 
 常用命令：
 

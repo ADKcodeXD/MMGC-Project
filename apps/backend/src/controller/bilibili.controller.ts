@@ -1,13 +1,13 @@
 import { Autowired, Controller, GetMapping, Query } from '~/common/decorator/decorator'
 import Result from '~/common/result'
 import { getBiliUserInfo, downloadBiliFace } from '~/common/utils/bilibili'
-import { QiniuUtils } from '~/common/utils/qiniuUtils'
+import { R2Utils } from '~/common/utils/r2Utils'
 import fs from 'fs'
 
 @Controller('/bilibili')
 export default class BilibiliController {
 	@Autowired()
-	qiniuUtils!: QiniuUtils
+	r2Utils!: R2Utils
 
 	@GetMapping('/userinfo')
 	async getUserInfo(@Query('mid') mid: number) {
@@ -20,7 +20,7 @@ export default class BilibiliController {
 			const downloaded = await downloadBiliFace(info.face)
 			if (downloaded) {
 				try {
-					const cdnUrl = await this.qiniuUtils.uploadImg(downloaded.filePath, downloaded.fileName)
+					const cdnUrl = await this.r2Utils.uploadImg(downloaded.filePath, downloaded.fileName)
 					if (cdnUrl) {
 						info.face = cdnUrl
 					}

@@ -61,8 +61,6 @@
     "nprogress": "^0.2.0",
     "path-to-regexp": "^6.2.0",
     "pinia": "2.0.12",
-    "qiniu": "^7.8.0",
-    "qiniu-js": "^3.4.1",
     "qs": "^6.10.3",
     "resize-observer-polyfill": "^1.5.1",
     "showdown": "^2.1.0",

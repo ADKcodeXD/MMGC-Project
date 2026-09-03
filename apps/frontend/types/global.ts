@@ -142,23 +142,25 @@ declare global {
     currentActivityId?: number
     skin?: string
     isVideoPlay?: boolean
+    enableCnAssetAcceleration?: boolean
     otherSettings?: string
     configType?: number
     assetBaseUrl?: string
     assetPrimaryBaseUrl?: string
-    assetGlobalBaseUrl?: string
-    assetRegion?: 'cn' | 'global'
+    assetCnBaseUrl?: string
+    assetRegion?: 'default' | 'cn'
   }
   export interface ConfigVo {
     currentActivityId: number
     skin: string
     isVideoPlay: boolean
+    enableCnAssetAcceleration?: boolean
     otherSettings: string | JSON
     configType: string
     assetBaseUrl?: string
     assetPrimaryBaseUrl?: string
-    assetGlobalBaseUrl?: string
-    assetRegion?: 'cn' | 'global'
+    assetCnBaseUrl?: string
+    assetRegion?: 'default' | 'cn'
   }
 }
 export {}

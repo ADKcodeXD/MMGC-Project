@@ -40,14 +40,15 @@
   const changeValue = (val: string) => {
     emit('change', val)
   }
-  const { uploadUrl = '' } = useGlobSetting()
+  const { apiUrl = '' } = useGlobSetting()
+  const uploadUrl = `${apiUrl.replace(/\/$/, '')}/upload/uploadImg`
   const userstore = useUserStore()
   const toolbarConfig = {}
   const editorConfig = {
     placeholder: '请输入内容...',
     MENU_CONF: {
       uploadImage: {
-        server: `${uploadUrl}uploadImg`,
+        server: uploadUrl,
         customInsert(res: ResResult<string>, insertFn) {
           insertFn(res.data, '')
         },

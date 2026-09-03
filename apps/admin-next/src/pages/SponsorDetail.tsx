@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { sponsorApi } from '../api/modules'
 import I18nFormItem from '../components/I18nFormItem'
-import QiniuUpload from '../components/QiniuUpload'
+import R2Upload from '../components/R2Upload'
 import RichTextPreview from '../components/RichTextPreview'
 import type { SponsorVo } from '../types'
 import { text } from '../utils/i18n'
@@ -114,7 +114,7 @@ export default function SponsorDetail() {
               {editing && (
                 <div style={{ marginTop: 12 }}>
                   <Form.Item name="sponsorLogo" noStyle>
-                    <QiniuUpload kind="image" accept="image/png,image/jpeg,image/webp,image/gif" />
+                    <R2Upload kind="image" accept="image/png,image/jpeg,image/webp,image/gif" />
                   </Form.Item>
                 </div>
               )}

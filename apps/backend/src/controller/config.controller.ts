@@ -11,26 +11,20 @@ import { Auth } from '~/common/decorator/auth'
 
 const stripTrailingSlash = (value = '') => value.replace(/\/+$/, '')
 
-const getDefaultGlobalAssetBaseUrl = () => {
-	const cdnLink = stripTrailingSlash(config.QINIU_CDN_LINK || '')
-	return cdnLink.replace('://assets.', '://assets-global.')
-}
-
-const isOverseaRequest = (ctx: Context) => {
+const isChinaRequest = (ctx: Context) => {
 	const country = String(ctx.headers['cf-ipcountry'] || ctx.headers['x-vercel-ip-country'] || '').toUpperCase()
-	if (!country || country === 'XX') return false
-	return country !== 'CN'
+	return country === 'CN'
 }
 
 const applyAssetConfig = (model: MMGCSysConfig, ctx: Context) => {
-	const assetPrimaryBaseUrl = stripTrailingSlash(config.QINIU_CDN_LINK || '')
-	const assetGlobalBaseUrl = stripTrailingSlash(config.QINIU_GLOBAL_CDN_LINK || getDefaultGlobalAssetBaseUrl())
-	const useGlobalAsset = Boolean(assetGlobalBaseUrl && isOverseaRequest(ctx))
+	const assetPrimaryBaseUrl = stripTrailingSlash(config.R2_PUBLIC_URL || 'https://assets.mirai-mad.com')
+	const assetCnBaseUrl = stripTrailingSlash(config.R2_CN_PUBLIC_URL || 'https://assets-cn.mirai-mad.com')
+	const useCnAsset = Boolean(model.enableCnAssetAcceleration && assetCnBaseUrl && isChinaRequest(ctx))
 
 	model.assetPrimaryBaseUrl = assetPrimaryBaseUrl
-	model.assetGlobalBaseUrl = assetGlobalBaseUrl
-	model.assetBaseUrl = useGlobalAsset ? assetGlobalBaseUrl : assetPrimaryBaseUrl
-	model.assetRegion = useGlobalAsset ? 'global' : 'cn'
+	model.assetCnBaseUrl = assetCnBaseUrl
+	model.assetBaseUrl = useCnAsset ? assetCnBaseUrl : assetPrimaryBaseUrl
+	model.assetRegion = useCnAsset ? 'cn' : 'default'
 }
 
 @Controller('/config')

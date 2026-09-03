@@ -137,12 +137,13 @@ declare global {
     skin?: string
     isVideoPlay?: boolean
     enableWatermark?: boolean
+		enableCnAssetAcceleration?: boolean
     otherSettings?: string
     configType?: number
     assetBaseUrl?: string
     assetPrimaryBaseUrl?: string
-    assetGlobalBaseUrl?: string
-    assetRegion?: 'cn' | 'global'
+		assetCnBaseUrl?: string
+		assetRegion?: 'default' | 'cn'
   }
 
   const enum ROLE {

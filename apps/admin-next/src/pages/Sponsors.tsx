@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { sponsorApi } from '../api/modules'
 import I18nFormItem from '../components/I18nFormItem'
-import QiniuUpload from '../components/QiniuUpload'
+import R2Upload from '../components/R2Upload'
 import type { SponsorVo } from '../types'
 import { stripHtml } from '../utils/html'
 import { text } from '../utils/i18n'
@@ -146,7 +146,7 @@ export default function Sponsors() {
             <Input placeholder="https://assets.mirai-mad.com/..." />
           </Form.Item>
           <Form.Item name="sponsorLogo" noStyle>
-            <QiniuUpload kind="image" accept="image/png,image/jpeg,image/webp,image/gif" />
+            <R2Upload kind="image" accept="image/png,image/jpeg,image/webp,image/gif" />
           </Form.Item>
           <Button type="primary" htmlType="submit" loading={saveMutation.isPending} block style={{ marginTop: 24 }}>
             保存

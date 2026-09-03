@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Alert, App, Button, Card, Form, Input, Select, Switch } from 'antd'
 import { useEffect } from 'react'
 import { activityApi, configApi } from '../api/modules'
-import QiniuUpload from '../components/QiniuUpload'
+import R2Upload from '../components/R2Upload'
 import type { SysConfig } from '../types'
 import { text } from '../utils/i18n'
 
@@ -42,6 +42,7 @@ export default function Config() {
       form.setFieldsValue({
         currentActivityId: config.data.currentActivityId,
         enableWatermark: config.data.enableWatermark ?? false,
+        enableCnAssetAcceleration: config.data.enableCnAssetAcceleration ?? false,
         isVideoPlay: config.data.isVideoPlay ?? true,
         skin: config.data.skin || '',
         bgStatistics: otherSettings.bgStatistics || '',
@@ -57,6 +58,7 @@ export default function Config() {
       const payload: SysConfig = {
         currentActivityId: values.currentActivityId ? Number(values.currentActivityId) : undefined,
         enableWatermark: values.enableWatermark,
+        enableCnAssetAcceleration: values.enableCnAssetAcceleration,
         isVideoPlay: values.allSiteVideoDisabled ? false : values.isVideoPlay,
         skin: values.skin,
         otherSettings: JSON.stringify({
@@ -67,7 +69,7 @@ export default function Config() {
             ? {
                 domain: 'assets.mirai-mad.com',
                 allowOnly: ['localhost', '127.0.0.1', '::1'],
-                status: 'pending-backend-qiniu-cdn-api'
+                status: 'pending-cloudflare-rules-api'
               }
             : null
         })
@@ -106,10 +108,19 @@ export default function Config() {
             <Input placeholder="https://assets.mirai-mad.com/..." />
           </Form.Item>
           <Form.Item name="bgStatistics" noStyle>
-            <QiniuUpload kind="image" accept="image/png,image/jpeg,image/webp,image/gif" />
+            <R2Upload kind="image" accept="image/png,image/jpeg,image/webp,image/gif" />
           </Form.Item>
 
           <Form.Item name="enableWatermark" label="前端视频水印" valuePropName="checked" style={{ marginTop: 24 }}>
+            <Switch />
+          </Form.Item>
+
+          <Form.Item
+            name="enableCnAssetAcceleration"
+            label="中国大陆资源加速"
+            valuePropName="checked"
+            extra="开启后，仅当 Cloudflare 识别到 CN IP 时返回 assets-cn.mirai-mad.com；其他请求始终使用 assets.mirai-mad.com。"
+          >
             <Switch />
           </Form.Item>
 
@@ -126,7 +137,7 @@ export default function Config() {
             showIcon
             style={{ marginBottom: 24 }}
             message="CDN 白名单拦截说明"
-            description="将 assets.mirai-mad.com 仅允许 localhost 访问会拦截该域名下全部资源，不只是视频。当前配置只保存策略意图；真正下发七牛 CDN 白名单仍需要后端接入七牛 CDN 配置 API，并做二次确认、操作审计和回滚。"
+            description="将 assets.mirai-mad.com 仅允许 localhost 访问会拦截该域名下全部资源，不只是视频。当前配置只保存策略意图；真正下发 Cloudflare 访问规则仍需要后端接入对应 API，并做二次确认、操作审计和回滚。"
           />
 
           <Form.Item name="skin" label="站点皮肤 / 主题标识">

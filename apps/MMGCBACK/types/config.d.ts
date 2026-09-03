@@ -140,9 +140,6 @@ export interface GlobConfig {
   // Upload url
   uploadUrl?: string
 
-  uploadLink?: string
-  uploadPath?: string
-  uploadCdnLink?: string
   //  Service interface url prefix
   urlPrefix?: string
   // Project abbreviation
@@ -157,9 +154,4 @@ export interface GlobEnvConfig {
   VITE_GLOB_API_URL_PREFIX?: string
   // Project abbreviation
   VITE_GLOB_APP_SHORT_NAME: string
-  // Upload url
-  VITE_GLOB_UPLOAD_URL?: string
-  VITE_GLOB_UPLOAD_PATH?: string
-  VITE_GLOB_UPLOAD_CDNLINK?: string
-  VITE_GLOB_UPLOAD_LINK?: string
 }

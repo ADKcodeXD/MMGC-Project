@@ -48,14 +48,21 @@ export interface SiteTrafficData {
 }
 
 export interface DashboardOverviewData {
-  totalTrafficGB: number;
-  chinaTrafficGB: number;
-  overseaTrafficGB: number;
-  estimatedTrafficCost: number;
-  estimatedChinaTrafficCost: number;
-  estimatedOverseaTrafficCost: number;
+  provider: 'cloudflare-r2';
+  configured: boolean;
+  configurationError: string | null;
+  bucket: string;
+  periodDays: number;
   currentStorageGB: number;
-  estimatedStorageCost: number;
+  avgStorageGB: number;
+  objectCount: number;
+  classAOperations: number;
+  classBOperations: number;
+  otherOperations: number;
+  totalOperations: number;
+  estimatedStorageCostUSD: number;
+  estimatedOperationsCostUSD: number;
+  estimatedTotalCostUSD: number;
 }
 
 export function getSiteTrafficStats(days?: number, mode?: ErrorMessageMode) {

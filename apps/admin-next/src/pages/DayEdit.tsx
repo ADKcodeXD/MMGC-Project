@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { activityApi, movieApi } from '../api/modules'
 import I18nFormItem from '../components/I18nFormItem'
-import QiniuUpload from '../components/QiniuUpload'
+import R2Upload from '../components/R2Upload'
 import type { DayVo, MovieVo } from '../types'
 import { text } from '../utils/i18n'
 import { exportVideos, previewExportFiles, type ExportProgress } from '../utils/exportVideos'
@@ -261,7 +261,7 @@ export default function DayEdit() {
                 <Input placeholder="图片链接" />
               </Form.Item>
               <Form.Item name="themeCover" noStyle>
-                <QiniuUpload kind="image" accept="image/png,image/jpeg,image/webp" />
+                <R2Upload kind="image" accept="image/png,image/jpeg,image/webp" />
               </Form.Item>
               {!form.getFieldValue('themeCover') && (
                 <div style={{ marginTop: 12, color: '#faad14', fontSize: 13, background: '#fffbe6', padding: '8px 12px', borderRadius: 6, border: '1px solid #ffe58f' }}>
